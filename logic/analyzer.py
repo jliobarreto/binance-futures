@@ -1,0 +1,66 @@
+# analyzer.py
+
+import pandas as pd
+import numpy as np
+import ta
+from logic.scorer import calcular_score
+from data.models import IndicadoresTecnicos
+from config.config import VOLUMEN_MINIMO_USDT, GRIDS_GAP_PCT, MIN_SCORE_ALERTA
+
+
+def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
+    df_d = pd.DataFrame(klines_d).astype(float)
+    df_w = pd.DataFrame(klines_w).astype(float)
+    close_d = df_d[4]
+    close_w = df_w[4]
+
+    # Indicadores
+    rsi_1d = ta.momentum.RSIIndicator(close_d, 14).rsi().iloc[-1]
+    rsi_1w = ta.momentum.RSIIndicator(close_w, 14).rsi().iloc[-1]
+    macd_obj = ta.trend.MACD(close_d)
+    macd_val = macd_obj.macd().iloc[-1]
+    macd_sig = macd_obj.macd_signal().iloc[-1]
+    ema20 = ta.trend.EMAIndicator(close_d, 20).ema_indicator().iloc[-1]
+    ema50 = ta.trend.EMAIndicator(close_d, 50).ema_indicator().iloc[-1]
+    ema200 = ta.trend.EMAIndicator(close_d, 200).ema_indicator().iloc[-1]
+    atr = ta.volatility.AverageTrueRange(df_d[2], df_d[3], close_d, 14).average_true_range().iloc[-1]
+    mfi = ta.volume.MFIIndicator(df_d[2], df_d[3], close_d, df_d[5], 14).money_flow_index().iloc[-1]
+    obv = ta.volume.OnBalanceVolumeIndicator(close_d, df_d[5]).on_balance_volume().iloc[-1]
+    adx = ta.trend.ADXIndicator(df_d[2], df_d[3], close_d, 14).adx().iloc[-1]
+    boll_upper = ta.volatility.BollingerBands(close_d).bollinger_hband().iloc[-1]
+    boll_lower = ta.volatility.BollingerBands(close_d).bollinger_lband().iloc[-1]
+
+    precio = close_d.iloc[-1]
+    volumen_actual = df_d[5].iloc[-1]
+    volumen_promedio = df_d[5].tail(30).mean()
+
+    if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
+        return None
+
+    tipo = "LONG"
+    if rsi_1d > 70 and rsi_1w > 60 and macd_val < macd_sig and ema20 < ema50 < ema200:
+        tipo = "SHORT"
+
+    if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (tipo == "SHORT" and btc_alcista and eth_alcista):
+        return None
+
+    # SL con ATR
+    sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
+
+    # Resistencia o soporte
+    resistencia = df_d[2].rolling(60).max().iloc[-1] if tipo == 'LONG' else df_d[3].rolling(60).min().iloc[-1]
+    distancia_tp = abs(resistencia - precio)
+    umbral_atr = 3 * atr
+    tp = resistencia if distancia_tp >= umbral_atr else precio + 6 * atr if tipo == 'LONG' else precio - 6 * atr
+
+    # Grids
+    grids = round(np.log(abs(tp / precio)) / np.log(1 + GRIDS_GAP_PCT)) if tp != precio else 0
+
+    tec = IndicadoresTecnicos(
+        symbol, precio, rsi_1d, rsi_1w, macd_val, macd_sig, ema20, ema50, ema200,
+        volumen_actual, volumen_promedio, atr, tipo, tp, sl, resistencia, grids,
+        mfi, obv, adx, boll_upper, boll_lower
+    )
+
+    score, notes = calcular_score(tec)
+    return tec, score, notes if score >= MIN_SCORE_ALERTA else None

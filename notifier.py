@@ -1,0 +1,61 @@
+# notifier.py
+import os
+import requests
+from openpyxl import Workbook, load_workbook
+from datetime import datetime
+from utils.path import XLSX_PATH
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+SIGNAL_FILE = os.path.join(XLSX_PATH, "registro_operaciones.xlsx")
+
+
+def enviar_telegram(texto: str, buttons: list = None):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": texto,
+        "parse_mode": "Markdown"
+    }
+
+    if buttons:
+        keyboard = [[{"text": b, "callback_data": b}] for b in buttons]
+        payload["reply_markup"] = {"inline_keyboard": keyboard}
+
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"❌ Error enviando a Telegram: {e}")
+        return None
+
+
+def guardar_operacion(op: dict, decision: str):
+    if not os.path.exists(SIGNAL_FILE):
+        wb = Workbook()
+        ws = wb.active
+        ws.append([
+            "Fecha", "Criptomoneda", "Tipo", "Entrada", "TP", "SL", "RSI", "MACD",
+            "Vitalidad", "Grids", "Score", "Decisión"
+        ])
+    else:
+        wb = load_workbook(SIGNAL_FILE)
+        ws = wb.active
+
+    ws.append([
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        op.get("Criptomoneda"),
+        op.get("Señal"),
+        op.get("Precio"),
+        op.get("TP"),
+        op.get("SL"),
+        op.get("RSI"),
+        op.get("MACD"),
+        op.get("Vitalidad"),
+        op.get("Grids"),
+        op.get("Score"),
+        decision
+    ])
+    wb.save(SIGNAL_FILE)
+    print(f"✅ Operación guardada como '{decision}' en el archivo Excel")
