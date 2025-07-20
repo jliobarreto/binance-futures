@@ -8,7 +8,7 @@ futures_bot/
 │
 ├── main.py                         # Archivo principal que ejecuta todo
 ├── config.py                       # Configuraciones generales
-├── runtime.log                     # Registro de ejecución
+├── runtime.log                     # (generado al ejecutar; no forma parte del repo)
 ├── telegram_webhook.py             # (Opcional) Webhook para respuestas de Telegram
 │
 ├── data/
@@ -34,67 +34,7 @@ futures_bot/
 
 main.py: orquesta el proceso completo.
 
-symbols.py: obtiene los pares USDT válidos y filtra excluidos.
-
-analyzer.py: por cada par:
-
-Consulta datos de precios.
-
-Calcula indicadores.
-
-Evalúa estructura del mercado.
-
-Calcula TP, SL y grids.
-
-filters.py: excluye pares manipulados o con baja liquidez.
-
-scorer.py: asigna una puntuación a cada criptomoneda.
-
-reporter.py: arma mensajes de Telegram y guarda el archivo .xlsx.
-
-notifier.py: envía la señal con botones (Cuenta 1, Cuenta 2, Rechazada).
-
-telegram_webhook.py: (opcional) escucha las respuestas del usuario.
-
-📊 Indicadores Utilizados
-
-RSI (1D y 1W)
-
-MACD y señal
-
-EMAs (20, 50, 200)
-
-Bollinger Bands
-
-ADX
-
-MFI
-
-OBV
-
-ATR (para TP/SL dinámico)
-
-📊 Filtros de Confirmación Obligatorios
-
-Confirmación con temporalidades mayores (multi-frame)
-
-Validación de consolidación previa + ruptura
-
-Validación estructural de TP y SL
-
-Filtro de mercado global (BTC y ETH alcista para LONG)
-
-Exclusión de criptos con volumen descendente o manipulación
-
-📦 Salidas
-
-output/señales_YYYY-MM-DD_HH-MM.xlsx: archivo con resultados de la ejecución
-
-Logs con errores o advertencias si algo falló
-
-Mensajes de Telegram con botones de selección y registro de respuesta en Excel
-
-📅 Futuras Mejoras
+@@ -98,41 +98,41 @@ Mensajes de Telegram con botones de selección y registro de respuesta en Excel
 
 Backtesting histórico para validar efectividad de señales
 
@@ -120,13 +60,13 @@ Antes de correr el bot es necesario configurar las variables de entorno:
 - `BINANCE_API_KEY` y `BINANCE_API_SECRET` para autenticar en Binance.
 - `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID` para enviar notificaciones por Telegram.
 
-Copie la plantilla y edite los valores reales con:
+Copie la plantilla incluida y edite los valores reales con:
 
 ```bash
-cp .env
+cp api.env .env
 ```
 
-Abra `.env` y reemplace por sus credenciales. Sin estas
+Abra `.env` y reemplace con sus credenciales reales. Sin estas
 variables el bot no podrá conectarse ni a Binance ni a Telegram.
 
 Finalmente ejecute:

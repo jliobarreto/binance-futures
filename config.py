@@ -30,3 +30,4 @@ ATR_MAX = 5                        # ATR máximo para descartar criptos demasiad
 
 # === RSI Rango para acumulación saludable ===
 RSI_BUY_MIN = 40                   # Nivel mínimo de RSI para considerar acumulación
+

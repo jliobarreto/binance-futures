@@ -12,7 +12,6 @@ from logic.reporter import exportar_resultados_excel, imprimir_resumen_terminal
 from logic.sentiment import tendencia_mercado_global
 from utils.telegram import enviar_telegram
 from binance.client import Client
-from datetime import datetime
 
 async def analizar_todo():
     btc_alcista, eth_alcista = tendencia_mercado_global()
@@ -47,3 +46,12 @@ async def analizar_todo():
                 })
         except Exception as e:
             print(f"❌ Error analizando {sym}: {e}")
+
+    archivo = exportar_resultados_excel(resultados)
+    imprimir_resumen_terminal(resultados)
+    if archivo:
+        enviar_telegram(f"📂 Archivo generado: {archivo}")
+
+
+if __name__ == "__main__":
+    asyncio.run(analizar_todo())
