@@ -33,11 +33,14 @@ def enviar_telegram(texto: str, buttons: list = None):
         return None
 
 
-wb = Workbook()
+def guardar_operacion(op: dict, decision: str) -> None:
+    """Guarda la operación y la decisión del usuario en un archivo Excel."""
+    if not os.path.exists(SIGNAL_FILE):
+        wb = Workbook()
         ws = wb.active
         ws.append([
-            "Fecha", "Criptomoneda", "Tipo", "Entrada", "TP", "SL", "RSI", "MACD",
-            "Vitalidad", "Grids", "Score", "Decisión"
+            "Fecha", "Criptomoneda", "Tipo", "Entrada", "TP", "SL", "RSI",
+            "MACD", "Vitalidad", "Grids", "Score", "Decisión"
         ])
     else:
         wb = load_workbook(SIGNAL_FILE)
@@ -62,27 +65,4 @@ wb = Workbook()
 
 
 def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
-    """Procesa la respuesta del usuario desde Telegram.
-
-    Parameters
-    ----------
-    callback_data : str
-        Texto enviado por Telegram en el callback. Se espera que tenga la forma
-        "DECISION|SYMBOL".
-    symbol : str
-        Símbolo de la operación asociada al mensaje.
-    memoria : dict
-        Estructura en memoria que almacena las operaciones enviadas.
-    """
-
-    # La decisión corresponde a la primera parte del callback
-    decision = callback_data.split("|")[0]
-
-    # Recuperar la operación de la memoria de operaciones enviadas
-    operacion = memoria.pop(symbol, None)
-    if not operacion:
-        print(f"⚠️ Operación para {symbol} no encontrada en memoria")
-        return
-
-    guardar_operacion(operacion, decision)
-    enviar_telegram(f"Respuesta recibida para {symbol}: {decision}")
+    """Procesa la respuesta del usuario desde Telegram."""

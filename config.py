@@ -43,6 +43,3 @@ DEBUG = True  # Si True, imprime más detalles en consola para depuración
 
 # === Parámetros de visualización para módulo de monitoreo (futuro) ===
 MONITOR_REFRESH_INTERVAL = 30  # segundos entre actualización de pantalla
-
-# === Límite de símbolos a analizar por ejecución ===
-LIMITE_ANALISIS = 50

@@ -14,7 +14,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     close_d = df_d[4]
     close_w = df_w[4]
 
-    # Indicadores
+# Indicadores
     rsi_1d = ta.momentum.RSIIndicator(close_d, 14).rsi().iloc[-1]
     rsi_1w = ta.momentum.RSIIndicator(close_w, 14).rsi().iloc[-1]
     macd_obj = ta.trend.MACD(close_d)
@@ -38,7 +38,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         return None
 
     tipo = "LONG"
-    if rsi_1d > 70 and rsi_1w > 60 and macd_val < macd_sig and ema20 < ema50 < ema200:
+    if rsi_1d > 70 and rsi_1w > 60 and macd_1d < macd_signal_1d and ema20 < ema50 < ema200:
         tipo = "SHORT"
 
     if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (tipo == "SHORT" and btc_alcista and eth_alcista):
@@ -64,4 +64,6 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     )
 
     score, notes = calcular_score(tec)
-    return tec, score, notes if score >= MIN_SCORE_ALERTA else None
+    if score >= MIN_SCORE_ALERTA:
+        return tec, score, notes
+    return None

@@ -2,6 +2,8 @@
 import pandas as pd
 import numpy as np
 import ta
+from binance.client import Client
+from config import BINANCE_API_KEY, BINANCE_API_SECRET
 
 def calcular_macd(close: pd.Series):
     macd_obj = ta.trend.MACD(close)
@@ -32,9 +34,9 @@ def calcular_mfi(high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.S
 def is_bounce_confirmed(symbol: str, direction: str = "long", lookback: int = 5) -> bool:
     """Evalúa si hubo un rebote en la EMA 200 en las últimas velas.
 
-    Esta implementación simple retorna ``False`` si no se dispone de datos
-    históricos. Se considera un rebote confirmado cuando el precio atraviesa la
-    EMA 200 y cierra nuevamente a favor de la dirección indicada.
+    Un rebote se considera confirmado cuando el precio cierra de un lado de la
+    EMA200 después de haber cerrado en el lado opuesto en la vela previa. Para
+    obtener los precios se consultan las velas diarias de Binance.
 
     Parameters
     ----------
@@ -45,7 +47,31 @@ def is_bounce_confirmed(symbol: str, direction: str = "long", lookback: int = 5)
     lookback : int
         Número de velas a verificar.
     """
-    # Placeholder: lógica de análisis pendiente de implementación completa.
+    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+
+    # Se solicitan suficientes velas para calcular la EMA200
+    limit = max(lookback + 205, 210)
+    klines = client.get_klines(
+        symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=limit
+    )
+
+    df = pd.DataFrame(klines).astype(float)
+    close = df[4]
+
+    ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator()
+
+    for i in range(-lookback + 1, 0):
+        prev_close = close.iloc[i - 1]
+        curr_close = close.iloc[i]
+
+        prev_above = prev_close > ema200.iloc[i - 1]
+        curr_above = curr_close > ema200.iloc[i]
+
+        if direction == "long" and not prev_above and curr_above:
+            return True
+        if direction == "short" and prev_above and not curr_above:
+            return True
+
     return False
 
 
@@ -65,5 +91,26 @@ def has_recent_ema_cross(symbol: str, direction: str = "long", lookback: int = 1
     lookback : int
         Cantidad de velas evaluadas.
     """
-    # Placeholder: se necesitarían datos históricos para un cálculo real.
+    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+
+    limit = max(lookback + 55, 60)
+    klines = client.get_klines(
+        symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=limit
+    )
+
+    close = pd.Series([float(k[4]) for k in klines])
+    ema20 = ta.trend.EMAIndicator(close, window=20).ema_indicator()
+    ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator()
+
+    diff = ema20 - ema50
+
+    for i in range(-lookback + 1, 0):
+        prev_diff = diff.iloc[i - 1]
+        curr_diff = diff.iloc[i]
+
+        if direction == "long" and prev_diff <= 0 and curr_diff > 0:
+            return True
+        if direction == "short" and prev_diff >= 0 and curr_diff < 0:
+            return True
+
     return False
