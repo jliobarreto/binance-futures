@@ -1,66 +1,127 @@
-Crypto Futures Signal Bot
+# Binance Futures Institutional Bot
 
-Este proyecto es un sistema modular y asincrónico diseñado para detectar oportunidades de trading en criptomonedas con un enfoque institucional, minimizando pérdidas y maximizando ganancias. Utiliza indicadores técnicos y análisis matemático sin depender de inteligencia artificial, y está orientado a temporalidades medias y largas.
+Este proyecto tiene como objetivo el desarrollo de un sistema automatizado de análisis y ejecución de operaciones en Binance Futures, orientado a estrategias de mediano y largo plazo (operaciones que se mantienen durante semanas o meses), con un enfoque institucional y un fuerte control de riesgo. Está diseñado para lograr un crecimiento sostenido del capital a través de reinversión y toma de decisiones basadas en datos estructurales del mercado.
 
-📂 Estructura de Carpetas
+---
 
-futures_bot/
-│
-├── main.py                         # Archivo principal que ejecuta todo
-├── config.py                       # Configuraciones generales
-├── logs/                           # Registro de ejecución
-│   └── runtime.log                 # (generado al ejecutar; no forma parte del repo)
-├── telegram_webhook.py             # (Opcional) Webhook para respuestas de Telegram
-│
-├── data/
-│   └── symbols.py               # Lista y filtros de criptomonedas
-│
-├── logic/
-│   ├── analyzer.py              # Procesa y arma el contexto técnico
-│   ├── filters.py               # Filtros de consolidación, manipulación, volumen
-│   ├── indicators.py            # Cálculo de RSI, MACD, ADX, BB, OBV, MFI, etc.
-│   ├── scorer.py                # Sistema de puntuación y validación de señales
-│   └── reporter.py              # Generador de mensajes y reportes
-│
-├── utils/
-│   ├── telegram.py              # Enviar mensajes y logs a Telegram
-│   ├── math_tools.py            # Cálculos matemáticos de soporte
-│   └── path.py                  # Rutas automáticas para salida de archivos
-│
-├── notifier.py                     # Envío de alertas a Telegram con botones
-├── output/                         # Archivos generados (.xlsx, logs)
-└── README.md                       # Documentación general
+## Objetivos generales
 
-📊 Flujo de Ejecución
+- Automatizar el análisis técnico multi-temporal de activos en Binance Futures.
+- Filtrar oportunidades únicamente cuando las condiciones del mercado sean saludables.
+- Validar estructuras técnicas confiables (consolidaciones y rupturas confirmadas).
+- Ejecutar operaciones long y short en función de condiciones específicas y diferenciadas.
+- Controlar el riesgo por operación y registrar resultados con fines de retroalimentación.
+- Escalar progresivamente el capital mediante reinversión compuesta.
+- Integrar funcionalidades de notificación y control vía Telegram.
 
-main.py: orquesta el proceso completo.
+---
 
-Instale todas las dependencias con:
-pip install -r requirements.txt
-```
+## Arquitectura del sistema
 
+El sistema está organizado de manera modular para facilitar la escalabilidad, el mantenimiento y la integración de nuevos componentes.
 
-🚀 Ejecución
+### Estructura actual de módulos
 
-Antes de correr el bot es necesario configurar las variables de entorno:
+| Módulo                | Descripción                                                                                 |
+|-----------------------|---------------------------------------------------------------------------------------------|
+| `main.py`             | Ejecuta el flujo principal del bot: evaluación del mercado, análisis de activos y notificación. |
+| `config.py`           | Contiene parámetros globales de configuración: API keys, riesgo por operación, umbrales, etc. |
+| `symbols.py`          | Define la lista de símbolos (activos) a analizar. Puede incluir filtros personalizados.     |
+| `indicators.py`       | Calcula indicadores técnicos como RSI, ADX, OBV, MFI, Bollinger Bands, entre otros.         |
+| `analyzer.py`         | Aplica reglas de análisis técnico estructurado por activo.                                  |
+| `scorer.py`           | Asigna una puntuación por activo, basada en múltiples criterios técnicos, estructurales y de volumen. |
+| `notifier.py`         | Envía señales al canal de Telegram con botones interactivos (Cuenta 1, Cuenta 2, Rechazada). |
+| `utils/`              | Contiene funciones auxiliares compartidas entre los distintos módulos.                      |
+| `market_filter.py`    | Evalúa la salud del mercado global (BTC, ETH, DXY) y bloquea operaciones si las condiciones no son favorables. |
+| `structure_validator.py` | Detecta estructuras limpias de consolidación + ruptura con volumen. En desarrollo.          |
+| `tracker.py`          | Proyectará la evolución del capital con reinversión, registro de drawdowns y rentabilidad. En planificación. |
 
-- `BINANCE_API_KEY` y `BINANCE_API_SECRET` para autenticar en Binance.
-- `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID` para enviar notificaciones por Telegram.
+---
 
-Copie el archivo de ejemplo y edite los valores reales con:
+## Estrategia de trading institucional
 
-```bash
-cp .env.example .env
-```
+El sistema está diseñado bajo los principios del trading institucional, priorizando el análisis estructural del mercado y la operativa únicamente en escenarios de alta probabilidad.
 
-Abra `.env` y reemplace con sus credenciales reales. Sin estas
-variables el bot no podrá conectarse ni a Binance ni a Telegram.
+### Fundamentos clave
 
-Finalmente ejecute:
+1. **Temporalidad operativa**: diario y semanal.
+2. **Tipo de operaciones**: posición (position trading), tanto long como short, con criterios independientes.
+3. **Condiciones obligatorias para operar**:
+   - Tendencia saludable en BTC y ETH.
+   - Consolidación previa con ruptura válida.
+   - Volumen creciente en la ruptura.
+   - Confirmación con indicadores técnicos estructurales (RSI, OBV, MFI, ADX).
+   - Confirmación en múltiples temporalidades (diaria y semanal).
+4. **Riesgo por operación**: configurable (por defecto 3 % del capital).
+5. **Gestión del capital**: reinversión mensual del 100 % de las ganancias.
+6. **Control de pérdidas**:
+   - Pausa automática del sistema tras dos operaciones consecutivas perdedoras.
+   - Bloqueo de operaciones si el mercado presenta manipulación o alta volatilidad sin contexto estructurado.
 
-```bash
-python main.py
-```
-Al ejecutarse se creará el archivo `logs/runtime.log` con el registro de la ejecución.
+---
 
-📊 Este proyecto fue diseñado para facilitar decisiones de trading profesional con un enfoque metódico, sin depender de emociones ni de AI compleja. Todo está preparado para analizar en marcos temporales medios y largos, priorizando la seguridad de capital.
+## Flujo operativo
+
+1. Verificación de condiciones del mercado global (`market_filter.py`).
+2. Análisis estructural por activo (`analyzer.py` + `structure_validator.py`).
+3. Cálculo del score institucional (`scorer.py`).
+4. Evaluación de oportunidades long o short según lógica diferenciada.
+5. Envío de señales a Telegram con botones de confirmación.
+6. Registro de resultados para retroalimentación futura (`tracker.py`).
+
+---
+
+## Integraciones y dependencias
+
+- **Binance API**: para análisis de precios y ejecución de operaciones (Futures).
+- **Yahoo Finance (yfinance)**: para análisis macro de BTC, ETH, DXY y SPY.
+- **TA-Lib / Pandas / NumPy**: para cálculos técnicos y manipulación de datos.
+- **Telegram Bot API**: para notificaciones de señales y control humano supervisado.
+- **XlsxWriter (o similar)**: para registro local de operaciones y rendimiento (en `tracker.py`).
+
+---
+
+## Casos de ejemplo
+
+### Caso 1: Activación de señal long
+
+- BTC presenta estructura saludable (Higher Low confirmado en gráfico diario).
+- El activo ADA rompe una consolidación semanal con volumen creciente.
+- RSI > 50, OBV ascendente, MFI validando acumulación institucional.
+- `scorer.py` otorga 88.2 % de score institucional.
+- Se envía señal con entrada y SL estructural definido.
+- Resultado: operación mantenida 14 días, TP2 alcanzado, retorno del 9 %.
+
+---
+
+## Roadmap de desarrollo
+
+| Etapa                        | Estado       | Descripción                                                                      |
+|-----------------------------|--------------|----------------------------------------------------------------------------------|
+| Implementación de market_filter | Completo     | Bloquea operaciones si BTC/ETH no presentan condiciones saludables.             |
+| Estructura de análisis técnico | En desarrollo | Validación de ruptura y retesteo en múltiples temporalidades.                   |
+| Separación lógica long/short  | Pendiente    | Diferenciación de reglas técnicas y estructurales por dirección de operación.   |
+| Registro de evolución de capital | Planificado  | Módulo `tracker.py` para proyección de crecimiento por interés compuesto.       |
+| Backtesting segmentado        | Planificado  | Evaluación de efectividad en diferentes escenarios de mercado.                  |
+| Evaluador de drawdown         | Planificado  | Registro de pérdidas mensuales y activación de protocolos de control.           |
+
+---
+
+## Requisitos técnicos
+
+- Python 3.10+
+- TA-Lib
+- yFinance
+- NumPy
+- Pandas
+- Python-Telegram-Bot
+- requests
+- dotenv
+
+---
+
+## Seguridad
+
+- Las credenciales de acceso (API key, secret) deben almacenarse en un archivo `.env`, que no debe ser compartido ni subido al repositorio.
+- No se habilitan permisos de retiro en las API Keys. Solo lectura y trading.
+- Se recomienda el uso de IP restringida para operar en entorno real.
