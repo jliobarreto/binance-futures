@@ -123,10 +123,10 @@ Antes de correr el bot es necesario configurar las variables de entorno:
 Copie la plantilla y edite los valores reales con:
 
 ```bash
-cp .env.api .env
+cp .env
 ```
 
-Abra `.env` y reemplace los `YOUR_*` por sus credenciales. Sin estas
+Abra `.env` y reemplace por sus credenciales. Sin estas
 variables el bot no podrá conectarse ni a Binance ni a Telegram.
 
 Finalmente ejecute:

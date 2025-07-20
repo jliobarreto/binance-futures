@@ -7,10 +7,10 @@ from datetime import timedelta
 load_dotenv()
 
 # Variables de entorno para autenticación y notificaciones
-BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
-BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET")
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")       # Clave API de Binance
+BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET") # Secreto API de Binance
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")         # Token del bot de Telegram
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")     # ID del chat para notificaciones
 
 # === Parámetros del sistema ===
 VOLUMEN_MINIMO_USDT = 300_000      # Monto mínimo en dólares para considerar un símbolo
@@ -25,8 +25,8 @@ EXCLUDED_TERMS = (
 )
 
 # === Rango de ATR permitido para filtrar criptos muy volátiles o planas ===
-ATR_MIN = 0.5
-ATR_MAX = 5
+ATR_MIN = 0.5                      # ATR mínimo para descartar criptos con baja volatilidad
+ATR_MAX = 5                        # ATR máximo para descartar criptos demasiado volátiles
 
 # === RSI Rango para acumulación saludable ===
-RSI_BUY_MIN = 40
+RSI_BUY_MIN = 40                   # Nivel mínimo de RSI para considerar acumulación
