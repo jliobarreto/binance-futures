@@ -115,8 +115,8 @@ Requiere definir las siguientes variables de entorno antes de ejecutar:
 - `BINANCE_API_KEY` y `BINANCE_API_SECRET` para autenticar en Binance.
 - `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID` para enviar notificaciones por Telegram.
 
-Estas claves pueden almacenarse en un archivo `.env` en la raíz del proyecto
-para evitar exponerlas en el código. El sistema las cargará automáticamente al
+Copie el archivo `.env.api` a `.env` en la raíz del proyecto y complete
+las claves con sus valores reales. El sistema las cargará automáticamente al
 ejecutar.
 
 📊 Este proyecto fue diseñado para facilitar decisiones de trading profesional con un enfoque metódico, sin depender de emociones ni de AI compleja. Todo está preparado para analizar en marcos temporales medios y largos, priorizando la seguridad de capital.

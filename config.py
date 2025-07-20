@@ -6,13 +6,6 @@ from datetime import timedelta
 # Cargar variables desde un archivo .env en caso de existir
 load_dotenv()
 
-# === API Keys ===
-BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
-BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET")
-
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
 # === Parámetros del sistema ===
 VOLUMEN_MINIMO_USDT = 300_000      # Monto mínimo en dólares para considerar un símbolo
 GRIDS_GAP_PCT = 0.024              # Separación entre niveles de grids
