@@ -65,4 +65,32 @@ def guardar_operacion(op: dict, decision: str) -> None:
 
 
 def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
-    """Procesa la respuesta del usuario desde Telegram."""
+"""Procesa la respuesta del usuario desde Telegram.
+
+    Parameters
+    ----------
+    callback_data : str
+        Cadena recibida desde Telegram con el formato "<decision>|<symbol>".
+    symbol : str
+        Símbolo de la operación asociada al callback.
+    memoria : dict
+        Diccionario utilizado para almacenar temporalmente las operaciones
+        enviadas a Telegram a la espera de una decisión del usuario.
+    """
+
+    # Extraer la decisión del usuario del callback
+    decision = callback_data.split("|")[0]
+
+    # Obtener la operación almacenada para el símbolo indicado
+    operacion = memoria.get(symbol)
+
+    if not operacion:
+        print(f"❌ Operación para {symbol} no encontrada en memoria")
+        return
+
+    # Registrar la decisión en el archivo Excel
+    guardar_operacion(operacion, decision)
+
+    # Eliminar la operación de la memoria para evitar duplicados
+    memoria.pop(symbol, None)
+

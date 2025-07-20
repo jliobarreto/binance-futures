@@ -24,3 +24,4 @@ class IndicadoresTecnicos:
     adx: float
     boll_upper: float
     boll_lower: float
+    

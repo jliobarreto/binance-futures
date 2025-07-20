@@ -43,3 +43,4 @@ def imprimir_resumen_terminal(resultados: list[dict]) -> None:
     print("\n🔍 Resumen de señales generadas:")
     for r in resultados:
         print(f"✅ {r['Criptomoneda']} | Tipo: {r['Señal']} | Score: {r['Score']} | Entrada: {r['Precio']:.4f} | TP: {r['TP']:.4f} | SL: {r['SL']:.4f}")
+        
