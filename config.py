@@ -1,12 +1,13 @@
 # config.py
+import os
 from datetime import timedelta
 
 # === API Keys ===
-BINANCE_API_KEY = "fcAy20fyHuii0of2n4jepQwLl3qskBtjaqX7YMCTuhqXD7cJCRP4XOOeqtARFv7I"
-BINANCE_API_SECRET = "46yzE9EH0VGuerjdULmuFwCRh3te8b5c3rUCpEyqfMm9SAn2C2vGScJa5R1zZy3b"
+BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
+BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET")
 
-TELEGRAM_TOKEN = "8132734898:AAHOxQyS_ouulRTsn9iU9c4q0jOe4CTgTGM"
-TELEGRAM_CHAT_ID = "@hyperboni"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # === Parámetros del sistema ===
 VOLUMEN_MINIMO_USDT = 300_000      # Monto mínimo en dólares para considerar un símbolo

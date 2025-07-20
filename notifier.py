@@ -65,7 +65,7 @@ def guardar_operacion(op: dict, decision: str) -> None:
 
 
 def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
-"""Procesa la respuesta del usuario desde Telegram.
+    """Procesa la respuesta del usuario desde Telegram.
 
     Parameters
     ----------
@@ -90,7 +90,4 @@ def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
 
     # Registrar la decisión en el archivo Excel
     guardar_operacion(operacion, decision)
-
-    # Eliminar la operación de la memoria para evitar duplicados
-    memoria.pop(symbol, None)
 

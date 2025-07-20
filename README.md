@@ -110,10 +110,9 @@ Mejora en visualización de datos para seguimiento
 
 python main.py
 
-Requiere:
+Requiere definir las siguientes variables de entorno antes de ejecutar:
 
-API KEY y SECRET de Binance configurados en config.py
-
-TELEGRAM TOKEN y CHAT ID configurados en config.py
+- `BINANCE_API_KEY` y `BINANCE_API_SECRET` para autenticar en Binance.
+- `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID` para enviar notificaciones por Telegram.
 
 📊 Este proyecto fue diseñado para facilitar decisiones de trading profesional con un enfoque metódico, sin depender de emociones ni de AI compleja. Todo está preparado para analizar en marcos temporales medios y largos, priorizando la seguridad de capital.
