@@ -1,9 +1,7 @@
 # config.py
 import os
 from dotenv import load_dotenv
-from datetime import timedelta
 
-from dotenv import load_dotenv
 load_dotenv("api.env")     # o la ruta donde ubiques el archivo
 
 # Variables de entorno para autenticación y notificaciones
@@ -29,5 +27,3 @@ ATR_MIN = 0.5                      # ATR mínimo para descartar criptos con baja
 ATR_MAX = 5                        # ATR máximo para descartar criptos demasiado volátiles
 
 # === RSI Rango para acumulación saludable ===
-RSI_BUY_MIN = 40                   # Nivel mínimo de RSI para considerar acumulación
-
