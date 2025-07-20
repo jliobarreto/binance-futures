@@ -35,7 +35,7 @@ futures_bot/
 
 main.py: orquesta el proceso completo.
 
-@@ -52,27 +53,28 @@ Instale todas las dependencias con:
+Instale todas las dependencias con:
 pip install -r requirements.txt
 ```
 
