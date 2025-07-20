@@ -2,6 +2,6 @@
  *.log
  .env
  *.pyc
--.vscode/
-+.vscode/
-+*.xlsx
+ .vscode/
+ .vscode/
+ *.xlsx
