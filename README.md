@@ -115,15 +115,24 @@ pip install -r requirements.txt
 
 🚀 Ejecución
 
-python main.py
-
-Requiere definir las siguientes variables de entorno antes de ejecutar:
+Antes de correr el bot es necesario configurar las variables de entorno:
 
 - `BINANCE_API_KEY` y `BINANCE_API_SECRET` para autenticar en Binance.
 - `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID` para enviar notificaciones por Telegram.
 
-Copie el archivo `.env.api` a `.env` en la raíz del proyecto y complete
-las claves con sus valores reales. El sistema las cargará automáticamente al
-ejecutar.
+Copie la plantilla y edite los valores reales con:
+
+```bash
+cp .env.api .env
+```
+
+Abra `.env` y reemplace los `YOUR_*` por sus credenciales. Sin estas
+variables el bot no podrá conectarse ni a Binance ni a Telegram.
+
+Finalmente ejecute:
+
+```bash
+python main.py
+```
 
 📊 Este proyecto fue diseñado para facilitar decisiones de trading profesional con un enfoque metódico, sin depender de emociones ni de AI compleja. Todo está preparado para analizar en marcos temporales medios y largos, priorizando la seguridad de capital.

@@ -3,6 +3,9 @@ from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
 
 
 def enviar_telegram(texto: str, parse_mode: str = "Markdown") -> None:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("❌ Faltan credenciales de Telegram")
+        return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -22,6 +25,9 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
     Cada botón es una opción como 'Cuenta 1', 'Cuenta 2', 'Rechazada'.
     Retorna el mensaje_id si fue exitoso.
     """
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("❌ Faltan credenciales de Telegram")
+        return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     keyboard = [[{"text": b, "callback_data": b}] for b in botones]
     payload = {
@@ -40,6 +46,9 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
 
 
 def responder_callback(callback_query_id: str, texto: str) -> None:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("❌ Faltan credenciales de Telegram")
+        return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery"
     payload = {
         "callback_query_id": callback_query_id,
