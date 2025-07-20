@@ -2,11 +2,11 @@
 from datetime import timedelta
 
 # === API Keys ===
-BINANCE_API_KEY = "TU_API_KEY"
-BINANCE_API_SECRET = "TU_API_SECRET"
+BINANCE_API_KEY = "fcAy20fyHuii0of2n4jepQwLl3qskBtjaqX7YMCTuhqXD7cJCRP4XOOeqtARFv7I"
+BINANCE_API_SECRET = "46yzE9EH0VGuerjdULmuFwCRh3te8b5c3rUCpEyqfMm9SAn2C2vGScJa5R1zZy3b"
 
-TELEGRAM_TOKEN = "TU_TELEGRAM_BOT_TOKEN"
-TELEGRAM_CHAT_ID = "TU_CHAT_ID"
+TELEGRAM_TOKEN = "8132734898:AAHOxQyS_ouulRTsn9iU9c4q0jOe4CTgTGM"
+TELEGRAM_CHAT_ID = "@hyperboni"
 
 # === Parámetros del sistema ===
 VOLUMEN_MINIMO_USDT = 300_000      # Monto mínimo en dólares para considerar un símbolo
