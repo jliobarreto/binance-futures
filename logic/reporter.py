@@ -33,12 +33,21 @@ def exportar_resultados_csv(resultados: list[dict], carpeta: str = "output") -> 
     df.to_csv(archivo, index=False)
     return archivo
 
-def imprimir_resumen_terminal(resultados: list[dict]) -> None:
-    """
-    Imprime un resumen de los resultados en consola para validación rápida.
+def imprimir_resumen_terminal(
+    resultados: list[dict], evaluados: int | None = None, score_max: float | None = None
+) -> None:
+    """Imprime un resumen de los resultados en consola para validación rápida.
+
+    Cuando no se encuentran oportunidades válidas también se informa cuántos
+    símbolos fueron evaluados y, de proporcionarse, el score máximo obtenido.
     """
     if not resultados:
-        logging.info("No se encontraron oportunidades válidas.")
+        mensaje = "No se encontraron oportunidades válidas."
+        if evaluados is not None:
+            mensaje += f" Se evaluaron {evaluados} símbolos."
+        if score_max is not None:
+            mensaje += f" Score máximo observado: {score_max:.2f}."
+        logging.info(mensaje)
         return
 
     logging.info("\n🔍 Resumen de señales generadas:")

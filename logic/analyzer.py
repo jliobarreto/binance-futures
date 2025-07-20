@@ -3,6 +3,7 @@
 import pandas as pd
 import numpy as np
 import ta
+import logging
 from logic.scorer import calcular_score
 from data.models import IndicadoresTecnicos
 from config import VOLUMEN_MINIMO_USDT, GRIDS_GAP_PCT, MIN_SCORE_ALERTA
@@ -34,7 +35,14 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     volumen_actual = df_d[5].iloc[-1]
     volumen_promedio = df_d[5].tail(30).mean()
 
+    logging.debug(
+        f"Analizando {symbol} | Volumen actual: {volumen_actual} | Volumen promedio: {volumen_promedio}"
+    )
+
     if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
+        logging.debug(
+            f"{symbol} descartado por volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
+        )
         return None
 
     tipo = "LONG"
@@ -42,6 +50,9 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         tipo = "SHORT"
 
     if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (tipo == "SHORT" and btc_alcista and eth_alcista):
+        logging.debug(
+            f"{symbol} descartado por contradicción con la tendencia global. Tipo: {tipo}, BTC alcista: {btc_alcista}, ETH alcista: {eth_alcista}"
+        )
         return None
 
     # SL con ATR
@@ -64,6 +75,8 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     )
 
     score, notes = calcular_score(tec)
+    logging.debug(f"{symbol} score: {score} | razones: {notes}")
     if score >= MIN_SCORE_ALERTA:
         return tec, score, notes
+    logging.debug(f"{symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})")
     return None

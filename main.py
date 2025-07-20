@@ -6,6 +6,7 @@ from config import (
     LIMITE_ANALISIS,
     BINANCE_API_KEY,
     BINANCE_API_SECRET,
+    MIN_SCORE_ALERTA,
 )
 from utils.path import LOGS_DIR
 
@@ -29,9 +30,11 @@ async def analizar_todo():
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
     symbols = obtener_pares_usdt(client)
+    symbols = symbols if LIMITE_ANALISIS is None else symbols[:LIMITE_ANALISIS]
     resultados = []
+    max_score = None
 
-    for sym in symbols if LIMITE_ANALISIS is None else symbols[:LIMITE_ANALISIS]:
+    for sym in symbols:
         try:
             klines_d = client.get_klines(
                 symbol=sym,
@@ -46,19 +49,22 @@ async def analizar_todo():
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
             if resultado:
                 tec, score, _ = resultado
-                resultados.append({
-                    "Criptomoneda": sym,
-                    "Señal": tec.tipo,
-                    "Precio": tec.precio,
-                    "TP": tec.tp,
-                    "SL": tec.sl,
-                    "Score": score,
-                })
+                if max_score is None or score > max_score:
+                    max_score = score
+                if score >= MIN_SCORE_ALERTA:
+                    resultados.append({
+                        "Criptomoneda": sym,
+                        "Señal": tec.tipo,
+                        "Precio": tec.precio,
+                        "TP": tec.tp,
+                        "SL": tec.sl,
+                        "Score": score,
+                    })
         except Exception as e:
             logging.error(f"Error analizando {sym}: {e}")
 
     archivo = exportar_resultados_excel(resultados)
-    imprimir_resumen_terminal(resultados)
+    imprimir_resumen_terminal(resultados, evaluados=len(symbols), score_max=max_score)
     if archivo:
         enviar_telegram(f"📂 Archivo generado: {archivo}")
 
