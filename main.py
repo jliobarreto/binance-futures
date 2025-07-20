@@ -13,7 +13,7 @@ from utils.path import LOGS_DIR
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     filename=LOGS_DIR / "runtime.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s %(levelname)s: %(message)s",
 )
 
