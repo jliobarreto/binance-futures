@@ -91,3 +91,8 @@ def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
     # Registrar la decisión en el archivo Excel
     guardar_operacion(operacion, decision)
 
+    # Enviar confirmación de registro al usuario
+    enviar_telegram(f"Operación para {symbol} guardada como '{decision}'")
+
+    # Eliminar la operación de la memoria para evitar duplicados
+    memoria.pop(symbol, None)

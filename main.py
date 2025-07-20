@@ -34,3 +34,26 @@ async def analizar_todo():
                 interval=Client.KLINE_INTERVAL_1WEEK,
                 limit=210,
             )
+            resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
+            if resultado:
+                tec, score, _ = resultado
+                resultados.append({
+                    "Criptomoneda": sym,
+                    "Señal": tec.tipo,
+                    "Precio": tec.precio,
+                    "TP": tec.tp,
+                    "SL": tec.sl,
+                    "Score": score,
+                })
+        except Exception as e:
+            print(f"❌ Error analizando {sym}: {e}")
+
+    archivo = exportar_resultados_excel(resultados)
+    imprimir_resumen_terminal(resultados)
+
+    if archivo:
+        enviar_telegram(f"📄 Resultados exportados: {archivo}")
+
+
+if __name__ == "__main__":
+    asyncio.run(analizar_todo())
