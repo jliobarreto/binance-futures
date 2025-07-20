@@ -1,10 +1,11 @@
 import requests
+import logging
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
 
 
 def enviar_telegram(texto: str, parse_mode: str = "Markdown") -> None:
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Faltan credenciales de Telegram")
+        logging.error("Faltan credenciales de Telegram")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
@@ -16,7 +17,7 @@ def enviar_telegram(texto: str, parse_mode: str = "Markdown") -> None:
         response = requests.post(url, data=payload, timeout=10)
         response.raise_for_status()
     except Exception as e:
-        print(f"❌ Error enviando mensaje a Telegram: {e}")
+        logging.error(f"Error enviando mensaje a Telegram: {e}")
 
 
 def enviar_telegram_con_botones(texto: str, botones: list) -> str:
@@ -26,7 +27,7 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
     Retorna el mensaje_id si fue exitoso.
     """
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Faltan credenciales de Telegram")
+        logging.error("Faltan credenciales de Telegram")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     keyboard = [[{"text": b, "callback_data": b}] for b in botones]
@@ -41,13 +42,13 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
         response.raise_for_status()
         return response.json().get("result", {}).get("message_id")
     except Exception as e:
-        print(f"❌ Error enviando botones a Telegram: {e}")
+        logging.error(f"Error enviando botones a Telegram: {e}")
         return ""
 
 
 def responder_callback(callback_query_id: str, texto: str) -> None:
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Faltan credenciales de Telegram")
+        logging.error("Faltan credenciales de Telegram")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery"
     payload = {
@@ -57,4 +58,7 @@ def responder_callback(callback_query_id: str, texto: str) -> None:
     try:
         requests.post(url, data=payload, timeout=10)
     except Exception as e:
-        print(f"❌ Error respondiendo callback: {e}")
+        logging.error(f"Error respondiendo callback: {e}")
+git add .           
+git commit -m "V1.0.0.12"  
+git push

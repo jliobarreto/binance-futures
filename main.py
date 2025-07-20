@@ -1,11 +1,21 @@
 # main.py
 
 import asyncio
+import logging
 from config import (
     LIMITE_ANALISIS,
     BINANCE_API_KEY,
     BINANCE_API_SECRET,
 )
+from utils.path import LOGS_DIR
+
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+logging.basicConfig(
+    filename=LOGS_DIR / "runtime.log",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+)
+
 from data.symbols import obtener_pares_usdt
 from logic.analyzer import analizar_simbolo
 from logic.reporter import exportar_resultados_excel, imprimir_resumen_terminal
@@ -45,7 +55,7 @@ async def analizar_todo():
                     "Score": score,
                 })
         except Exception as e:
-            print(f"❌ Error analizando {sym}: {e}")
+            logging.error(f"Error analizando {sym}: {e}")
 
     archivo = exportar_resultados_excel(resultados)
     imprimir_resumen_terminal(resultados)
@@ -55,3 +65,4 @@ async def analizar_todo():
 
 if __name__ == "__main__":
     asyncio.run(analizar_todo())
+

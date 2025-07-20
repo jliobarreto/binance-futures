@@ -1,5 +1,6 @@
 # notifier.py
 import os
+import logging
 import requests
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
@@ -27,7 +28,7 @@ def enviar_telegram(texto: str, buttons: list = None):
         response = requests.post(url, json=payload, timeout=10)
         return response.json()
     except Exception as e:
-        print(f"❌ Error enviando a Telegram: {e}")
+        logging.error(f"Error enviando a Telegram: {e}")
         return None
 
 
@@ -59,7 +60,7 @@ def guardar_operacion(op: dict, decision: str) -> None:
         decision
     ])
     wb.save(SIGNAL_FILE)
-    print(f"✅ Operación guardada como '{decision}' en el archivo Excel")
+    logging.info(f"Operación guardada como '{decision}' en el archivo Excel")
 
 
 def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
@@ -72,7 +73,7 @@ def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
     operacion = memoria.get(symbol)
 
     if not operacion:
-        print(f"❌ Operación para {symbol} no encontrada en memoria")
+        logging.error(f"Operación para {symbol} no encontrada en memoria")
         return
 
     # Registrar la decisión en el archivo Excel

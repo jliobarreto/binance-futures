@@ -8,7 +8,8 @@ futures_bot/
 │
 ├── main.py                         # Archivo principal que ejecuta todo
 ├── config.py                       # Configuraciones generales
-├── runtime.log                     # (generado al ejecutar; no forma parte del repo)
+├── logs/                           # Registro de ejecución
+│   └── runtime.log                 # (generado al ejecutar; no forma parte del repo)
 ├── telegram_webhook.py             # (Opcional) Webhook para respuestas de Telegram
 │
 ├── data/
@@ -34,21 +35,7 @@ futures_bot/
 
 main.py: orquesta el proceso completo.
 
-@@ -98,41 +98,41 @@ Mensajes de Telegram con botones de selección y registro de respuesta en Excel
-
-Backtesting histórico para validar efectividad de señales
-
-Score mínimo ajustable según contexto de mercado
-
-Detección de eventos de rebote o soporte clave con algorítmica
-
-Integración de Google Sheets o base de datos (PostgreSQL o SQLite)
-
-Mejora en visualización de datos para seguimiento
-📥 Instalación
-Instale todas las dependencias con:
-
-```bash
+@@ -52,27 +53,28 @@ Instale todas las dependencias con:
 pip install -r requirements.txt
 ```
 
@@ -74,5 +61,7 @@ Finalmente ejecute:
 ```bash
 python main.py
 ```
+Al ejecutarse se creará el archivo `logs/runtime.log` con el registro de la ejecución.
 
 📊 Este proyecto fue diseñado para facilitar decisiones de trading profesional con un enfoque metódico, sin depender de emociones ni de AI compleja. Todo está preparado para analizar en marcos temporales medios y largos, priorizando la seguridad de capital.
+logic/reporter.py

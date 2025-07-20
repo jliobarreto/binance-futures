@@ -3,6 +3,7 @@
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
+import logging
 
 def exportar_resultados_excel(resultados: list[dict], carpeta: str = "output") -> str:
     """
@@ -37,11 +38,12 @@ def imprimir_resumen_terminal(resultados: list[dict]) -> None:
     Imprime un resumen de los resultados en consola para validación rápida.
     """
     if not resultados:
-        print("❌ No se encontraron oportunidades válidas.")
+        logging.info("No se encontraron oportunidades válidas.")
         return
 
-    print("\n🔍 Resumen de señales generadas:")
+    logging.info("\n🔍 Resumen de señales generadas:")
     for r in resultados:
-        print(f"✅ {r['Criptomoneda']} | Tipo: {r['Señal']} | Score: {r['Score']} | Entrada: {r['Precio']:.4f} | TP: {r['TP']:.4f} | SL: {r['SL']:.4f}")
-
+        logging.info(
+            f"✅ {r['Criptomoneda']} | Tipo: {r['Señal']} | Score: {r['Score']} | Entrada: {r['Precio']:.4f} | TP: {r['TP']:.4f} | SL: {r['SL']:.4f}"
+        )
 
