@@ -47,10 +47,10 @@ Antes de correr el bot es necesario configurar las variables de entorno:
 - `BINANCE_API_KEY` y `BINANCE_API_SECRET` para autenticar en Binance.
 - `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID` para enviar notificaciones por Telegram.
 
-Copie la plantilla incluida y edite los valores reales con:
+Copie el archivo de ejemplo y edite los valores reales con:
 
 ```bash
-cp api.env .env
+cp .env.example .env
 ```
 
 Abra `.env` y reemplace con sus credenciales reales. Sin estas
@@ -64,4 +64,3 @@ python main.py
 Al ejecutarse se creará el archivo `logs/runtime.log` con el registro de la ejecución.
 
 📊 Este proyecto fue diseñado para facilitar decisiones de trading profesional con un enfoque metódico, sin depender de emociones ni de AI compleja. Todo está preparado para analizar en marcos temporales medios y largos, priorizando la seguridad de capital.
-logic/reporter.py
