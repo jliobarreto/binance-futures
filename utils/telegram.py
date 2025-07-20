@@ -59,6 +59,3 @@ def responder_callback(callback_query_id: str, texto: str) -> None:
         requests.post(url, data=payload, timeout=10)
     except Exception as e:
         logging.error(f"Error respondiendo callback: {e}")
-git add .           
-git commit -m "V1.0.0.12"  
-git push
