@@ -105,6 +105,13 @@ Detección de eventos de rebote o soporte clave con algorítmica
 Integración de Google Sheets o base de datos (PostgreSQL o SQLite)
 
 Mejora en visualización de datos para seguimiento
+📥 Instalación
+Instale todas las dependencias con:
+
+```bash
+pip install -r requirements.txt
+```
+
 
 🚀 Ejecución
 
