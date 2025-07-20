@@ -1,5 +1,7 @@
-__pycache__/
-*.log
-.env
-*.pyc
-.vscode/
+ __pycache__/
+ *.log
+ .env
+ *.pyc
+-.vscode/
++.vscode/
++*.xlsx
