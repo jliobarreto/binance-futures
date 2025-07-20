@@ -28,3 +28,8 @@ ATR_MIN = 0.5                      # ATR mínimo para descartar criptos con baja
 ATR_MAX = 5                        # ATR máximo para descartar criptos demasiado volátiles
 
 # === RSI Rango para acumulación saludable ===
+RSI_BUY_MIN = 40               # Nivel mínimo de RSI para considerar acumulación
+RSI_BUY_MAX = 55               # Nivel máximo de RSI para considerar acumulación
+RSI_OVERSOLD = 30              # Umbral de sobreventa
+RSI_OVERBOUGHT = 70            # Umbral de sobrecompra
+RSI_WEEKLY_OVERBOUGHT = 60     # RSI semanal por encima del cual se considera sobrecompra
