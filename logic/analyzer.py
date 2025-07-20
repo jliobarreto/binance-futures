@@ -5,7 +5,7 @@ import numpy as np
 import ta
 from logic.scorer import calcular_score
 from data.models import IndicadoresTecnicos
-from config.config import VOLUMEN_MINIMO_USDT, GRIDS_GAP_PCT, MIN_SCORE_ALERTA
+from config import VOLUMEN_MINIMO_USDT, GRIDS_GAP_PCT, MIN_SCORE_ALERTA
 
 
 def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
@@ -18,8 +18,8 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     rsi_1d = ta.momentum.RSIIndicator(close_d, 14).rsi().iloc[-1]
     rsi_1w = ta.momentum.RSIIndicator(close_w, 14).rsi().iloc[-1]
     macd_obj = ta.trend.MACD(close_d)
-    macd_val = macd_obj.macd().iloc[-1]
-    macd_sig = macd_obj.macd_signal().iloc[-1]
+    macd_1d = macd_obj.macd().iloc[-1]
+    macd_signal_1d = macd_obj.macd_signal().iloc[-1]
     ema20 = ta.trend.EMAIndicator(close_d, 20).ema_indicator().iloc[-1]
     ema50 = ta.trend.EMAIndicator(close_d, 50).ema_indicator().iloc[-1]
     ema200 = ta.trend.EMAIndicator(close_d, 200).ema_indicator().iloc[-1]
@@ -57,9 +57,10 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     grids = round(np.log(abs(tp / precio)) / np.log(1 + GRIDS_GAP_PCT)) if tp != precio else 0
 
     tec = IndicadoresTecnicos(
-        symbol, precio, rsi_1d, rsi_1w, macd_val, macd_sig, ema20, ema50, ema200,
-        volumen_actual, volumen_promedio, atr, tipo, tp, sl, resistencia, grids,
-        mfi, obv, adx, boll_upper, boll_lower
+        symbol, precio, rsi_1d, rsi_1w, macd_1d, macd_signal_1d,
+        ema20, ema50, ema200,
+        volumen_actual, volumen_promedio, atr, tipo, tp, sl, resistencia,
+        grids, mfi, obv, adx, boll_upper, boll_lower
     )
 
     score, notes = calcular_score(tec)

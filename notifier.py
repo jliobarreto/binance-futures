@@ -8,7 +8,9 @@ from utils.path import XLSX_PATH
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-SIGNAL_FILE = os.path.join(XLSX_PATH, "registro_operaciones.xlsx")
+# XLSX_PATH ya contiene la ruta completa del archivo, por lo que solo
+# es necesario convertirlo a cadena para usarlo con openpyxl.
+SIGNAL_FILE = str(XLSX_PATH)
 
 
 def enviar_telegram(texto: str, buttons: list = None):
@@ -31,9 +33,7 @@ def enviar_telegram(texto: str, buttons: list = None):
         return None
 
 
-def guardar_operacion(op: dict, decision: str):
-    if not os.path.exists(SIGNAL_FILE):
-        wb = Workbook()
+wb = Workbook()
         ws = wb.active
         ws.append([
             "Fecha", "Criptomoneda", "Tipo", "Entrada", "TP", "SL", "RSI", "MACD",
@@ -59,3 +59,30 @@ def guardar_operacion(op: dict, decision: str):
     ])
     wb.save(SIGNAL_FILE)
     print(f"✅ Operación guardada como '{decision}' en el archivo Excel")
+
+
+def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
+    """Procesa la respuesta del usuario desde Telegram.
+
+    Parameters
+    ----------
+    callback_data : str
+        Texto enviado por Telegram en el callback. Se espera que tenga la forma
+        "DECISION|SYMBOL".
+    symbol : str
+        Símbolo de la operación asociada al mensaje.
+    memoria : dict
+        Estructura en memoria que almacena las operaciones enviadas.
+    """
+
+    # La decisión corresponde a la primera parte del callback
+    decision = callback_data.split("|")[0]
+
+    # Recuperar la operación de la memoria de operaciones enviadas
+    operacion = memoria.pop(symbol, None)
+    if not operacion:
+        print(f"⚠️ Operación para {symbol} no encontrada en memoria")
+        return
+
+    guardar_operacion(operacion, decision)
+    enviar_telegram(f"Respuesta recibida para {symbol}: {decision}")

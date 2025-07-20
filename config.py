@@ -1,5 +1,4 @@
 # config.py
-
 from datetime import timedelta
 
 # === API Keys ===
@@ -13,11 +12,12 @@ TELEGRAM_CHAT_ID = "TU_CHAT_ID"
 VOLUMEN_MINIMO_USDT = 300_000      # Monto mínimo en dólares para considerar un símbolo
 GRIDS_GAP_PCT = 0.024              # Separación entre niveles de grids
 MIN_SCORE_ALERTA = 80              # Puntuación mínima para enviar alerta a Telegram
+LIMITE_ANALISIS = 50               # Número máximo de símbolos a evaluar en cada ejecución
 
 # === Exclusión de pares apalancados, experimentales o inestables ===
 EXCLUDED_TERMS = (
-    'UP', 'DOWN', 'BULL', 'BEAR', 'VENUS', 'TUSD', 'USDC', 'LEVERAGED', '1000',
-    'FDUSD', 'BTCDOM', 'TEST', 'USD'  # Incluye tokens de test o dominancia
+    "UP", "DOWN", "BULL", "BEAR", "VENUS", "TUSD", "USDC",
+    "LEVERAGED", "1000", "FDUSD", "BTCDOM", "TEST", "USD"  # Incluye tokens de test o dominancia
 )
 
 # === Rango de ATR permitido para filtrar criptos muy volátiles o planas ===
@@ -43,3 +43,6 @@ DEBUG = True  # Si True, imprime más detalles en consola para depuración
 
 # === Parámetros de visualización para módulo de monitoreo (futuro) ===
 MONITOR_REFRESH_INTERVAL = 30  # segundos entre actualización de pantalla
+
+# === Límite de símbolos a analizar por ejecución ===
+LIMITE_ANALISIS = 50
