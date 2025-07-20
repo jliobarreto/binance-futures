@@ -6,3 +6,4 @@ openpyxl
 requests
 flask
 scipy
+python-dotenv

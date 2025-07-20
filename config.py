@@ -1,6 +1,10 @@
 # config.py
 import os
+from dotenv import load_dotenv
 from datetime import timedelta
+
+# Cargar variables desde un archivo .env en caso de existir
+load_dotenv()
 
 # === API Keys ===
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
@@ -27,20 +31,3 @@ ATR_MAX = 5
 
 # === RSI Rango para acumulación saludable ===
 RSI_BUY_MIN = 40
-RSI_BUY_MAX = 55
-RSI_OVERBOUGHT = 70
-RSI_EXTREME_OVERBOUGHT = 80
-
-# === Archivos y rutas ===
-RUTA_EXCEL = "output/"
-NOMBRE_EXCEL = "señales_long_short"
-EXTENSION_EXCEL = ".xlsx"
-
-# === Timezone o latencia (para futuras mejoras de sincronización) ===
-TIMEZONE_OFFSET = timedelta(hours=-5)  # UTC-5 para Ecuador o similar
-
-# === Modo verbose/logging ===
-DEBUG = True  # Si True, imprime más detalles en consola para depuración
-
-# === Parámetros de visualización para módulo de monitoreo (futuro) ===
-MONITOR_REFRESH_INTERVAL = 30  # segundos entre actualización de pantalla
