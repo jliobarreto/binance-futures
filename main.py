@@ -22,7 +22,7 @@ async def analizar_todo():
     symbols = obtener_pares_usdt(client)
     resultados = []
 
-    for sym in symbols[:LIMITE_ANALISIS]:
+    for sym in symbols if LIMITE_ANALISIS is None else symbols[:LIMITE_ANALISIS]:
         try:
             klines_d = client.get_klines(
                 symbol=sym,
@@ -47,13 +47,3 @@ async def analizar_todo():
                 })
         except Exception as e:
             print(f"❌ Error analizando {sym}: {e}")
-
-    archivo = exportar_resultados_excel(resultados)
-    imprimir_resumen_terminal(resultados)
-
-    if archivo:
-        enviar_telegram(f"📄 Resultados exportados: {archivo}")
-
-
-if __name__ == "__main__":
-    asyncio.run(analizar_todo())
