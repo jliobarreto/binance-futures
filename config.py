@@ -3,8 +3,8 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 
-# Cargar variables desde un archivo .env en caso de existir
-load_dotenv()
+from dotenv import load_dotenv
+load_dotenv("api.env")     # o la ruta donde ubiques el archivo
 
 # Variables de entorno para autenticación y notificaciones
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")       # Clave API de Binance
