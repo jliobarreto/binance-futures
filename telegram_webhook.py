@@ -1,4 +1,5 @@
 import logging
+from flask import Flask, request, jsonify
 
 from notifier.notifier import manejar_callback
 from logic.memory import operaciones_enviadas

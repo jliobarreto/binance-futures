@@ -49,4 +49,3 @@ def obtener_contexto_mercado() -> ContextoMercado:
         vix_valor=vix_valor,
         mercado_favorable=mercado_favorable,
     )
-main.py

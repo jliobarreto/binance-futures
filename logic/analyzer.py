@@ -80,9 +80,17 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         grids, mfi, obv, adx, boll_upper, boll_lower
     )
 
-    score, notes = calcular_score(tec)
-    logging.debug(f"{symbol} score: {score} | razones: {notes}")
+    score, factors = calcular_score(tec)
+    logging.debug(f"{symbol} score: {score} | factores: {factors}")
+    tec.trend_score = factors["trend"]
+    tec.volume_score = factors["volume"]
+    tec.momentum_score = factors["momentum"]
+    tec.volatility_score = factors["volatility"]
+    tec.rr_score = factors["risk_reward"]
+    tec.score = score
     if score >= MIN_SCORE_ALERTA:
-        return tec, score, notes
-    logging.debug(f"{symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})")
+        return tec, score, factors
+    logging.debug(
+        f"{symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})"
+    )
     return None

@@ -23,4 +23,11 @@ class IndicadoresTecnicos:
     obv: float
     adx: float
     boll_upper: float
-    boll_lower: float  
+    boll_lower: float
+    trend_score: float | None = None
+    volume_score: float | None = None
+    momentum_score: float | None = None
+    volatility_score: float | None = None
+    rr_score: float | None = None
+    score: float | None = None
+    

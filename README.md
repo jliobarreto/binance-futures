@@ -110,6 +110,29 @@ binance-futures/
 
 ---
 
+## Ponderación del sistema de score
+
+El puntaje final se calcula normalizando cada factor entre 0 y 100 y aplicando
+la siguiente fórmula:
+
+```
+score = 0.4 * tendencia + 0.2 * momentum + 0.2 * volumen \
+        + 0.1 * volatilidad + 0.1 * riesgo_reward
+```
+
+Donde:
+
+* **tendencia**: orden de EMAs y dirección del MACD.
+* **momentum**: nivel de RSI diario acorde al tipo de señal.
+* **volumen**: relación entre volumen actual y promedio de 30 días.
+* **volatilidad**: validación del ATR en un rango saludable.
+* **riesgo_reward**: relación entre TP y SL respecto al precio.
+
+Cada función en `scorer.py` (`calcular_trend_score`, `calcular_volume_score`,
+etc.) devuelve un valor normalizado entre 0 y 100 para su factor.
+
+---
+
 ## Estado actual del desarrollo
 
 | Módulo                   | Estado        | Observaciones                                                       |
