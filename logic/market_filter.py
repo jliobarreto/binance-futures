@@ -26,3 +26,34 @@ def cumple_mejoras_tecnicas(datos_1d, datos_1w, indicadores, tipo, btc_alcista, 
 
     # 3. Validación estructural del SL y TP
     precio = indicadores.get('precio')
+    tp = indicadores.get('tp')
+    sl = indicadores.get('sl')
+
+    if precio is None or tp is None or sl is None:
+        return False, 'Faltan niveles de precio'
+
+    riesgo = abs(precio - sl)
+    recompensa = abs(tp - precio)
+    if riesgo == 0 or recompensa / riesgo < 2:
+        return False, 'Relación TP/SL desfavorable'
+
+    grids = round(np.log(abs(tp / precio)) / np.log(1 + GRIDS_GAP_PCT)) if tp != precio else 0
+    if grids < 2:
+        return False, 'TP demasiado cercano'
+
+    # 4. Filtro global (BTC y ETH)
+    if tipo == 'LONG' and not (btc_alcista and eth_alcista):
+        return False, 'Mercado global bajista'
+    if tipo == 'SHORT' and btc_alcista and eth_alcista:
+        return False, 'Mercado global alcista'
+
+    # 5. Filtro de volumen bajo o manipulado
+    volumen_actual = indicadores.get('volumen_actual')
+    volumen_promedio = indicadores.get('volumen_promedio', 0)
+    if volumen_actual is not None:
+        if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
+            return False, 'Volumen insuficiente'
+        if volumen_promedio and volumen_actual < 0.5 * volumen_promedio:
+            return False, 'Volumen decreciente'
+
+    return True, 'OK'
