@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import pandas as pd
 import ta
 import yfinance as yf
@@ -34,13 +35,53 @@ def _tendencia_alcista(close: pd.Series) -> bool:
 
 def obtener_contexto_mercado() -> ContextoMercado:
     """Obtiene el contexto general del mercado usando datos macro."""
-    btc_d = _descargar_cierre("BTC-USD", "1d")
-    btc_w = _descargar_cierre("BTC-USD", "1wk")
-    eth_d = _descargar_cierre("ETH-USD", "1d")
-    eth_w = _descargar_cierre("ETH-USD", "1wk")
-    dxy_d = _descargar_cierre("^DXY", "1d")
-    vix_d = _descargar_cierre("^VIX", "1d", "100d")
+    try:
+        btc_d = _descargar_cierre("BTC-USD", "1d")
+    except Exception as e:
+        logging.error(f"Error descargando BTC-USD 1d: {e}")
+        return ContextoMercado(False, False, False, 0.0, False)
+
+    try:
+        btc_w = _descargar_cierre("BTC-USD", "1wk")
+    except Exception as e:
+        logging.error(f"Error descargando BTC-USD 1wk: {e}")
+        return ContextoMercado(False, False, False, 0.0, False)
+
+    try:
+        eth_d = _descargar_cierre("ETH-USD", "1d")
+    except Exception as e:
+        logging.error(f"Error descargando ETH-USD 1d: {e}")
+        return ContextoMercado(False, False, False, 0.0, False)
+
+    try:
+        eth_w = _descargar_cierre("ETH-USD", "1wk")
+    except Exception as e:
+        logging.error(f"Error descargando ETH-USD 1wk: {e}")
+        return ContextoMercado(False, False, False, 0.0, False)
+
+    try:
+        dxy_d = _descargar_cierre("^DXY", "1d")
+    except Exception as e:
+        logging.error(f"Error descargando ^DXY 1d: {e}")
+        return ContextoMercado(False, False, False, 0.0, False)
+
+    try:
+        vix_d = _descargar_cierre("^VIX", "1d", "100d")
+    except Exception as e:
+        logging.error(f"Error descargando ^VIX 1d: {e}")
+        return ContextoMercado(False, False, False, 0.0, False)
 
     btc_alcista = _tendencia_alcista(btc_d) and _tendencia_alcista(btc_w)
     eth_alcista = _tendencia_alcista(eth_d) and _tendencia_alcista(eth_w)
     dxy_alcista = _tendencia_alcista(dxy_d)
+    vix_valor = float(vix_d.iloc[-1]) if not vix_d.empty else 0.0
+
+    mercado_favorable = btc_alcista and eth_alcista and not dxy_alcista and vix_valor < 25
+
+    return ContextoMercado(
+        btc_alcista=btc_alcista,
+        eth_alcista=eth_alcista,
+        dxy_alcista=dxy_alcista,
+        vix_valor=vix_valor,
+        mercado_favorable=mercado_favorable,
+    )
