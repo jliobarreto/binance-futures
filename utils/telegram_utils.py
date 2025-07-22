@@ -117,6 +117,30 @@ def enviar_telegram(texto: str, parse_mode: str = "Markdown") -> None:
 
 
 def enviar_telegram_con_botones(texto: str, botones: list) -> str:
-    """
-    Envía un mensaje con botones de respuesta rápida.
+    """Envía un mensaje con botones de respuesta rápida.
+
     Cada botón es una opción como 'Cuenta 1', 'Cuenta 2', 'Rechazada'.
+    """
+
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        logging.error("Faltan credenciales de Telegram")
+        return ""
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    keyboard = [[{"text": b, "callback_data": b}] for b in botones]
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": texto,
+        "parse_mode": "Markdown",
+        "reply_markup": {"inline_keyboard": keyboard},
+    }
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        logging.info("Respuesta de Telegram: %s", data)
+        return str(data.get("result", {}).get("message_id"))
+    except Exception as e:
+        logging.error(f"Error enviando mensaje con botones: {e}")
+        return ""
+    
