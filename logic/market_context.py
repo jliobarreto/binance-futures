@@ -41,3 +41,11 @@ def obtener_contexto_mercado() -> ContextoMercado:
     vix_valor = float(vix_d.iloc[-1]) if not vix_d.empty else 0.0
 
     mercado_favorable = btc_alcista and eth_alcista and not dxy_alcista and vix_valor < 25
+
+    return ContextoMercado(
+        btc_alcista=btc_alcista,
+        eth_alcista=eth_alcista,
+        dxy_alcista=dxy_alcista,
+        vix_valor=vix_valor,
+        mercado_favorable=mercado_favorable,
+    )
