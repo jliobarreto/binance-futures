@@ -12,6 +12,13 @@ class ContextoMercado:
     mercado_favorable: bool
 
 def _descargar_cierre(ticker: str, interval: str, period: str = "400d") -> pd.Series:
+    df = yf.download(
+        ticker,
+        interval=interval,
+        period=period,
+        progress=False,
+        auto_adjust=False,
+    )
     df = yf.download(ticker, interval=interval, period=period, progress=False)
     if df.empty:
         return pd.Series(dtype=float)
