@@ -32,6 +32,14 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     boll_upper = ta.volatility.BollingerBands(close_d).bollinger_hband().iloc[-1]
     boll_lower = ta.volatility.BollingerBands(close_d).bollinger_lband().iloc[-1]
 
+    logging.debug(
+        f"{symbol} indicadores: RSI1D={rsi_1d:.2f}, RSI1W={rsi_1w:.2f}, "
+        f"MACD1D={macd_1d:.4f}, MACD_signal1D={macd_signal_1d:.4f}, "
+        f"EMA20={ema20:.4f}, EMA50={ema50:.4f}, EMA200={ema200:.4f}, "
+        f"ATR={atr:.4f}, MFI={mfi:.2f}, OBV={obv:.2f}, ADX={adx:.2f}, "
+        f"Boll_upper={boll_upper:.4f}, Boll_lower={boll_lower:.4f}"
+    )
+
     es_valido, motivo_lp = valida_entrada_largo_plazo(df_d, df_w)
     if not es_valido:
         logging.debug(f"{symbol} descartado por validación de largo plazo: {motivo_lp}")
@@ -78,6 +86,10 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         ema20, ema50, ema200,
         volumen_actual, volumen_promedio, atr, tipo, tp, sl, resistencia,
         grids, mfi, obv, adx, boll_upper, boll_lower
+    )
+
+    logging.debug(
+        f"{symbol} valores calculados: precio={precio}, tp={tp}, sl={sl}, grids={grids}"
     )
 
     score, factors = calcular_score(tec)

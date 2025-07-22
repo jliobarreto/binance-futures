@@ -70,6 +70,9 @@ async def analizar_todo():
                 interval=Client.KLINE_INTERVAL_1WEEK,
                 limit=210,
             )
+            logging.debug(
+                f"{sym} datos diarios: {len(klines_d)} velas, semanales: {len(klines_w)}"
+            )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
             logging.debug(f"Análisis de {sym} completado")
             if resultado:
@@ -90,6 +93,7 @@ async def analizar_todo():
                     "Score": score,
                 }
                 resultados.append(resultado_dict)
+                logging.debug(f"Resultado de {sym}: {resultado_dict}")
                 mensaje_senal = formatear_senal(resultado_dict)
                 enviar_telegram(mensaje_senal)
         except Exception as e:
