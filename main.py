@@ -72,3 +72,38 @@ async def analizar_todo():
             )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
             logging.debug(f"Análisis de {sym} completado")
+            if resultado:
+                tec, score, _ = resultado
+                if max_score is None or score > max_score:
+                    max_score = score
+                resultado_dict = {
+                    "Criptomoneda": tec.symbol,
+                    "Señal": tec.tipo,
+                    "Precio": tec.precio,
+                    "TP": tec.tp,
+                    "SL": tec.sl,
+                    "RSI": tec.rsi_1d,
+                    "MACD": tec.macd_1d,
+                    "MACD_signal": tec.macd_signal_1d,
+                    "Vitalidad": tec.volumen_actual / tec.volumen_promedio if tec.volumen_promedio else None,
+                    "Grids": tec.grids,
+                    "Score": score,
+                }
+                resultados.append(resultado_dict)
+                mensaje_senal = formatear_senal(resultado_dict)
+                enviar_telegram(mensaje_senal)
+        except Exception as e:
+            logging.error(f"Error analizando {sym}: {e}")
+
+    archivo_excel = exportar_resultados_excel(resultados)
+    archivo_csv = exportar_resultados_csv(resultados)
+    imprimir_resumen_terminal(resultados, len(symbols), max_score)
+
+    if archivo_excel:
+        enviar_telegram(f"📊 Reporte Excel generado: {archivo_excel}")
+    if archivo_csv:
+        enviar_telegram(f"📊 Reporte CSV generado: {archivo_csv}")
+
+
+if __name__ == "__main__":
+    asyncio.run(analizar_todo())

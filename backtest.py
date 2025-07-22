@@ -122,4 +122,3 @@ if __name__ == "__main__":
         print("Uso: python backtest.py SYMBOL [SYMBOL...]")
         sys.exit(0)
     ejecutar_backtest(sys.argv[1:])
-data/models.py
