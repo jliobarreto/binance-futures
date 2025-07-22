@@ -24,18 +24,26 @@ from logic.reporter import (
     exportar_resultados_csv,
     imprimir_resumen_terminal,
 )
-from logic.sentiment import tendencia_mercado_global
+from logic.market_context import obtener_contexto_mercado
 from utils.telegram_utils import enviar_telegram, formatear_senal
 from binance.client import Client
 
 async def analizar_todo():
-    btc_alcista, eth_alcista = tendencia_mercado_global()
+    contexto = obtener_contexto_mercado()
     mensaje_tendencia = (
-        f"🌐 Tendencia BTC: {'Alcista ✅' if btc_alcista else 'Bajista ❌'} | "
-        f"ETH: {'Alcista ✅' if eth_alcista else 'Bajista ❌'}"
+        f"🌐 BTC: {'Alcista ✅' if contexto.btc_alcista else 'Bajista ❌'} | "
+        f"ETH: {'Alcista ✅' if contexto.eth_alcista else 'Bajista ❌'} | "
+        f"DXY: {'Alza ❌' if contexto.dxy_alcista else 'Baja ✅'} | "
+        f"VIX: {contexto.vix_valor:.1f}"
     )
     enviar_telegram(mensaje_tendencia)
-    logging.info("Notificación de tendencia enviada por Telegram")
+    logging.info("Contexto de mercado obtenido")
+    if not contexto.mercado_favorable:
+        logging.info("Mercado desfavorable, análisis detenido")
+        enviar_telegram("⚠️ Mercado desfavorable. Trading detenido.")
+        return
+    btc_alcista = contexto.btc_alcista
+    eth_alcista = contexto.eth_alcista
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
     symbols = obtener_pares_usdt(client)
