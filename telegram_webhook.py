@@ -13,14 +13,15 @@ def webhook():
     if "callback_query" in data:
         callback = data["callback_query"]
         callback_data = callback.get("data", "")
-        symbol = callback_data.split("|")[1]
+        partes = callback_data.split("|")
+        symbol = partes[1] if len(partes) >= 2 else ""
         try:
             manejar_callback(callback_data, symbol, operaciones_enviadas)
             responder_callback(callback.get("id", ""), "Operación recibida")
         except Exception as e:
             logging.error(f"Error procesando callback: {e}")
-    
+
     return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
-    app.run(port=5000)  
+    app.run(port=5000)

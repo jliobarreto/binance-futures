@@ -107,4 +107,3 @@ async def analizar_todo():
 
 if __name__ == "__main__":
     asyncio.run(analizar_todo())
- 

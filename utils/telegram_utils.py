@@ -143,7 +143,7 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
     except Exception as e:
         logging.error(f"Error enviando mensaje con botones: {e}")
         return ""
-    
+  
 def responder_callback(callback_id: str, text: str) -> None:
     """Envía answerCallbackQuery para confirmar el callback en Telegram."""
     if not TELEGRAM_TOKEN:

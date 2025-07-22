@@ -112,7 +112,8 @@ binance-futures/
 * `max_consec_losses`: máximo de pérdidas consecutivas antes de pausar
 * `btc_drop_threshold`: caída intradía de BTC que detiene el trading
 * `volume_drop_threshold`: reducción de volumen global que activa la pausa
-* `trade_history_file`: ruta del CSV con el historial de resultados
+* `trade_history_file`: ruta del CSV con el historial de resultados. Los PnL
+  de cada operación cerrada se agregan de forma secuencial en este archivo.
 
 ---
 
@@ -122,6 +123,10 @@ binance-futures/
 comportamiento reciente de BTC junto con el volumen agregado del mercado.
 Cuando alguno supera los umbrales de `config.py`, el bot pausa el análisis y
 envía una notificación de Telegram.
+
+Al cerrar una operación, su PnL se registra con
+`risk_manager.registrar_resultado`, lo que actualiza el archivo indicado por
+`TRADE_HISTORY_FILE`.
 
 ---
 

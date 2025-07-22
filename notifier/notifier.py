@@ -6,6 +6,7 @@ from openpyxl import Workbook, load_workbook
 from datetime import datetime
 from utils.path import XLSX_PATH
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+from logic.risk_manager import registrar_resultado
 
 # XLSX_PATH ya contiene la ruta completa del archivo, por lo que solo
 # es necesario convertirlo a cadena para usarlo con openpyxl.
@@ -66,10 +67,23 @@ def guardar_operacion(op: dict, decision: str) -> None:
 def manejar_callback(callback_data: str, symbol: str, memoria: dict) -> None:
     """Procesa la respuesta del usuario desde Telegram."""
 
-    # Extraer la decisión del usuario del callback
-    decision = callback_data.split("|")[0]
+    partes = callback_data.split("|")
+    decision = partes[0]
 
-    # Obtener la operación almacenada para el símbolo indicado
+    # Permite registrar el resultado final de una operación con el formato
+    # "RESULTADO|SYMBOL|PNL" enviado desde Telegram.
+    if decision.lower() == "resultado" and len(partes) >= 3:
+        try:
+            pnl = float(partes[2])
+        except ValueError:
+            logging.error(f"PNL inválido en callback: {callback_data}")
+            return
+        registrar_resultado(pnl)
+        enviar_telegram(
+            f"Resultado para {symbol} registrado: {pnl:.2f} USDT"
+        )
+        return
+
     operacion = memoria.get(symbol)
 
     if not operacion:

@@ -105,7 +105,6 @@ def puede_operar() -> bool:
             progress=False,
             auto_adjust=False,
         )
-       btc = yf.download("BTC-USD", period="2d", interval="1d", progress=False)
         if not btc.empty:
             apertura = float(btc["Open"].iloc[-1])
             cierre = float(btc["Close"].iloc[-1])
@@ -122,7 +121,6 @@ def puede_operar() -> bool:
             progress=False,
             auto_adjust=False,
         )
-        total = yf.download("TOTAL", period="2d", interval="1d", progress=False)
         if "Volume" in total.columns and len(total) >= 2:
             vol_prev = float(total["Volume"].iloc[-2])
             vol_act = float(total["Volume"].iloc[-1])
