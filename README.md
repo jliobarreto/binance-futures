@@ -81,7 +81,7 @@ binance-futures/
 ├── /assets/                      # Documentación, plantillas, imágenes de arquitectura (si aplica)
 │
 └── README.md                     # Documento principal del repositorio
-````
+```
 
 ---
 

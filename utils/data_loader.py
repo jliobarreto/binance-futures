@@ -19,4 +19,3 @@ def descargar_klines(symbol: str, interval: str, limit: int = 500, client: Optio
 def cargar_csv(path: str) -> pd.DataFrame:
     """Carga un archivo CSV usando pandas."""
     return pd.read_csv(path)
-utils/file_manager.py
