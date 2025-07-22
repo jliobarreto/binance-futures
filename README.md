@@ -165,6 +165,18 @@ etc.) devuelve un valor normalizado entre 0 y 100 para su factor.
 
 ---
 
+## Backtesting historico
+
+El script `backtest.py` permite evaluar la estrategia con datos pasados antes de operar en vivo.
+
+```bash
+python backtest.py BTCUSDT ETHUSDT
+```
+
+Los resultados se guardan en `output/backtests/` en los archivos `trades.csv` y `summary.csv`.
+
+---
+
 ## Seguridad
 
 * Las claves API están en el archivo `.env`, y deben protegerse. No se suben al repositorio.
