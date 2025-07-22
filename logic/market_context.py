@@ -19,7 +19,6 @@ def _descargar_cierre(ticker: str, interval: str, period: str = "400d") -> pd.Se
         progress=False,
         auto_adjust=False,
     )
-    df = yf.download(ticker, interval=interval, period=period, progress=False)
     if df.empty:
         return pd.Series(dtype=float)
     return df["Close"].astype(float).squeeze("columns")
@@ -45,14 +44,3 @@ def obtener_contexto_mercado() -> ContextoMercado:
     btc_alcista = _tendencia_alcista(btc_d) and _tendencia_alcista(btc_w)
     eth_alcista = _tendencia_alcista(eth_d) and _tendencia_alcista(eth_w)
     dxy_alcista = _tendencia_alcista(dxy_d)
-    vix_valor = float(vix_d.iloc[-1]) if not vix_d.empty else 0.0
-
-    mercado_favorable = btc_alcista and eth_alcista and not dxy_alcista and vix_valor < 25
-
-    return ContextoMercado(
-        btc_alcista=btc_alcista,
-        eth_alcista=eth_alcista,
-        dxy_alcista=dxy_alcista,
-        vix_valor=vix_valor,
-        mercado_favorable=mercado_favorable,
-    )

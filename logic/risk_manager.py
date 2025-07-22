@@ -73,6 +73,7 @@ def _leer_historial() -> list[float]:
     with open(TRADE_HISTORY_FILE, "r", encoding="utf-8") as f:
         for line in f:
             parts = line.strip().split(",")
+
             if len(parts) < 2:
                 continue
             try:
