@@ -25,7 +25,7 @@ from logic.reporter import (
     imprimir_resumen_terminal,
 )
 from logic.sentiment import tendencia_mercado_global
-from utils.telegram_utils import enviar_telegram
+from utils.telegram_utils import enviar_telegram, formatear_senal
 from binance.client import Client
 
 async def analizar_todo():
@@ -64,14 +64,18 @@ async def analizar_todo():
                 if max_score is None or score > max_score:
                     max_score = score
                 if score >= MIN_SCORE_ALERTA:
-                    resultados.append({
+                    resultado_dict = {
                         "Criptomoneda": sym,
                         "Señal": tec.tipo,
                         "Precio": tec.precio,
                         "TP": tec.tp,
                         "SL": tec.sl,
                         "Score": score,
-                    })
+                    }
+                    resultados.append(resultado_dict)
+                    mensaje = formatear_senal(resultado_dict)
+                    enviar_telegram(mensaje)
+                    logging.info(f"Notificación enviada por Telegram para {sym}")
         except Exception as e:
             logging.error(f"Error analizando {sym}: {e}")
 
@@ -89,3 +93,4 @@ async def analizar_todo():
 
 if __name__ == "__main__":
     asyncio.run(analizar_todo())
+    
