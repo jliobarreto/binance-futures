@@ -30,15 +30,22 @@ from binance.client import Client
 
 async def analizar_todo():
     btc_alcista, eth_alcista = tendencia_mercado_global()
-    enviar_telegram(f"🌐 Tendencia BTC: {'Alcista ✅' if btc_alcista else 'Bajista ❌'} | ETH: {'Alcista ✅' if eth_alcista else 'Bajista ❌'}")
+    mensaje_tendencia = (
+        f"🌐 Tendencia BTC: {'Alcista ✅' if btc_alcista else 'Bajista ❌'} | "
+        f"ETH: {'Alcista ✅' if eth_alcista else 'Bajista ❌'}"
+    )
+    enviar_telegram(mensaje_tendencia)
+    logging.info("Notificación de tendencia enviada por Telegram")
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
     symbols = obtener_pares_usdt(client)
     symbols = symbols if LIMITE_ANALISIS is None else symbols[:LIMITE_ANALISIS]
+    logging.info(f"Comenzando análisis de {len(symbols)} símbolos")
     resultados = []
     max_score = None
 
     for sym in symbols:
+        logging.debug(f"Analizando {sym}")
         try:
             klines_d = client.get_klines(
                 symbol=sym,
@@ -51,6 +58,7 @@ async def analizar_todo():
                 limit=210,
             )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
+            logging.debug(f"Análisis de {sym} completado")
             if resultado:
                 tec, score, _ = resultado
                 if max_score is None or score > max_score:
@@ -67,13 +75,16 @@ async def analizar_todo():
         except Exception as e:
             logging.error(f"Error analizando {sym}: {e}")
 
+    logging.info("Generando archivos de resultados")
     archivo_excel = exportar_resultados_excel(resultados)
     archivo_csv = exportar_resultados_csv(resultados)
     imprimir_resumen_terminal(resultados, evaluados=len(symbols), score_max=max_score)
     if archivo_excel:
         enviar_telegram(f"📂 Archivo generado: {archivo_excel}")
+        logging.info(f"Notificación enviada por Telegram: {archivo_excel}")
     if archivo_csv:
         enviar_telegram(f"📂 Archivo generado: {archivo_csv}")
+        logging.info(f"Notificación enviada por Telegram: {archivo_csv}")
 
 
 if __name__ == "__main__":

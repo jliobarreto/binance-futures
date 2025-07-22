@@ -17,6 +17,8 @@ def exportar_resultados_excel(resultados: list[dict], carpeta: str = "output") -
     Path(carpeta).mkdir(parents=True, exist_ok=True)
     archivo = f"{carpeta}/señales_long_short_{timestamp}.xlsx"
     df.to_excel(archivo, index=False)
+    ruta = str(Path(archivo).resolve())
+    logging.info(f"Archivo Excel exportado en {ruta}")
     return archivo
 
 def exportar_resultados_csv(resultados: list[dict], carpeta: str = "output") -> str:
@@ -31,6 +33,8 @@ def exportar_resultados_csv(resultados: list[dict], carpeta: str = "output") -> 
     Path(carpeta).mkdir(parents=True, exist_ok=True)
     archivo = f"{carpeta}/señales_long_short_{timestamp}.csv"
     df.to_csv(archivo, index=False)
+    ruta = str(Path(archivo).resolve())
+    logging.info(f"Archivo CSV exportado en {ruta}")
     return archivo
 
 def imprimir_resumen_terminal(
@@ -55,5 +59,3 @@ def imprimir_resumen_terminal(
         logging.info(
             f"✅ {r['Criptomoneda']} | Tipo: {r['Señal']} | Score: {r['Score']} | Entrada: {r['Precio']:.4f} | TP: {r['TP']:.4f} | SL: {r['SL']:.4f}"
         )
-
-    return
