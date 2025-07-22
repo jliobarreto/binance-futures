@@ -70,6 +70,10 @@ async def analizar_todo():
                         "Precio": tec.precio,
                         "TP": tec.tp,
                         "SL": tec.sl,
+                        "RSI": tec.rsi_1d,
+                        "MACD": "al alza" if tec.macd_1d > tec.macd_signal_1d else "a la baja",
+                        "Vitalidad": tec.volumen_actual / tec.volumen_promedio,
+                        "Grids": tec.grids,
                         "Score": score,
                     }
                     resultados.append(resultado_dict)
@@ -93,4 +97,3 @@ async def analizar_todo():
 
 if __name__ == "__main__":
     asyncio.run(analizar_todo())
-    

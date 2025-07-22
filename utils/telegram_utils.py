@@ -6,11 +6,14 @@ from data.models import IndicadoresTecnicos
 
 
 def formatear_senal(data: Any) -> str:
-    """Construye un mensaje de varias líneas para Telegram.
+    """Devuelve un mensaje de varias líneas con formato Markdown.
 
-    Acepta un objeto ``IndicadoresTecnicos`` o un diccionario con
-    las claves básicas de la señal y retorna una cadena formateada.
+    ``data`` puede ser una instancia de :class:`IndicadoresTecnicos` o un
+    diccionario con las claves necesarias.  Se extraen los valores básicos de
+    la señal (símbolo, tipo, precios) y, si están disponibles, los indicadores
+    ``RSI``, ``MACD``, ``Vitalidad`` y ``Grids``.
     """
+
     if isinstance(data, IndicadoresTecnicos):
         symbol = data.symbol
         tipo = data.tipo
@@ -18,6 +21,15 @@ def formatear_senal(data: Any) -> str:
         tp = data.tp
         sl = data.sl
         score = getattr(data, "score", None)
+        rsi = getattr(data, "rsi_1d", None)
+        macd_up = getattr(data, "macd_1d", None)
+        macd_signal = getattr(data, "macd_signal_1d", None)
+        vitalidad = (
+            data.volumen_actual / data.volumen_promedio
+            if getattr(data, "volumen_promedio", 0)
+            else None
+        )
+        grids = getattr(data, "grids", None)
     elif isinstance(data, dict):
         symbol = data.get("Criptomoneda")
         tipo = data.get("Señal")
@@ -25,21 +37,64 @@ def formatear_senal(data: Any) -> str:
         tp = data.get("TP")
         sl = data.get("SL")
         score = data.get("Score")
+        rsi = data.get("RSI")
+        macd_up = data.get("MACD")  # Puede ser valor o dirección
+        macd_signal = data.get("MACD_signal")
+        vitalidad = data.get("Vitalidad")
+        grids = data.get("Grids")
     else:
         raise TypeError("Objeto no soportado para formatear_senal")
 
+    # Dirección del MACD en texto
+    direccion_macd = ""
+    try:
+        if macd_signal is not None:
+            direccion_macd = (
+                "alcista" if float(macd_up) > float(macd_signal) else "bajista"
+            )
+        elif macd_up is not None:
+            direccion_macd = str(macd_up)
+    except Exception:
+        direccion_macd = str(macd_up)
+
     lineas = [
-        f"\ud83d\udcc8 *{symbol}*",  # 📈
-        f"Tipo: {tipo}",
-        f"Entrada: {precio:.4f}",
-        f"TP: {tp:.4f}",
-        f"SL: {sl:.4f}",
+        "🚨 SEÑAL DE COMPRA" if tipo == "LONG" else "🚨 SEÑAL DE VENTA",
+        f"🪙 Criptomoneda: {symbol}",
+        f"🤖 Señal: {tipo}",
+        f"📈 Precio de entrada: ${precio:.4f}",
+        f"🎯 Take profit: ${tp:.4f}",
+        f"🛑 Stop Loss: ${sl:.4f}",
     ]
+
+    if rsi is not None:
+        lineas.append(
+            f"📊 RSI: {float(rsi):.1f} | MACD {direccion_macd}" if direccion_macd else f"📊 RSI: {float(rsi):.1f}"
+        )
+    elif direccion_macd:
+        lineas.append(f"📊 MACD {direccion_macd}")
+
+    if vitalidad is not None:
+        try:
+            lineas.append(f"⚡ Vitalidad: {float(vitalidad):.2f}x")
+        except (ValueError, TypeError):
+            lineas.append(f"⚡ Vitalidad: {vitalidad}")
+
+    if grids is not None:
+        lineas.append(f"📐 Grids: {grids}")
+
     if score is not None:
         try:
-            lineas.append(f"Score: {float(score):.2f}")
-        except (ValueError, TypeError):
-            lineas.append(f"Score: {score}")
+            punt = float(score)
+            if punt >= 50:
+                comentario = "🟢 Señal excelente"
+            elif punt >= 40:
+                comentario = "🟡 Señal buena"
+            else:
+                comentario = None
+        except Exception:
+            comentario = None
+        if comentario:
+            lineas.append(comentario)
 
     return "\n".join(lineas)
 
@@ -65,5 +120,3 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
     """
     Envía un mensaje con botones de respuesta rápida.
     Cada botón es una opción como 'Cuenta 1', 'Cuenta 2', 'Rechazada'.
-    Retorna el mensaje_id si fue exitoso.
-    """
