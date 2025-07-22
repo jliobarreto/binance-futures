@@ -1,8 +1,3 @@
-Aquí tienes todo el contenido profesional y completo en formato Markdown listo para copiar y pegar directamente en tu archivo `README.md`:
-
----
-
-````markdown
 # Binance Futures Institutional Bot
 
 Este proyecto es un sistema de análisis y ejecución automatizada de operaciones en Binance Futures, con enfoque institucional y diseñado para estrategias de **mediano y largo plazo** (desde días hasta varios meses por operación). Está orientado a **maximizar la rentabilidad con base en datos reales del mercado**, manteniendo una gestión de riesgo estricta y reinvirtiendo de forma compuesta los beneficios generados.

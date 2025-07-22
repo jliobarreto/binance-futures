@@ -21,7 +21,7 @@ from data.symbols import obtener_pares_usdt
 from logic.analyzer import analizar_simbolo
 from logic.reporter import exportar_resultados_excel, imprimir_resumen_terminal
 from logic.sentiment import tendencia_mercado_global
-from utils.telegram import enviar_telegram
+from utils.telegram_utils import enviar_telegram
 from binance.client import Client
 
 async def analizar_todo():
@@ -47,28 +47,3 @@ async def analizar_todo():
                 limit=210,
             )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
-            if resultado:
-                tec, score, _ = resultado
-                if max_score is None or score > max_score:
-                    max_score = score
-                if score >= MIN_SCORE_ALERTA:
-                    resultados.append({
-                        "Criptomoneda": sym,
-                        "Señal": tec.tipo,
-                        "Precio": tec.precio,
-                        "TP": tec.tp,
-                        "SL": tec.sl,
-                        "Score": score,
-                    })
-        except Exception as e:
-            logging.error(f"Error analizando {sym}: {e}")
-
-    archivo = exportar_resultados_excel(resultados)
-    imprimir_resumen_terminal(resultados, evaluados=len(symbols), score_max=max_score)
-    if archivo:
-        enviar_telegram(f"📂 Archivo generado: {archivo}")
-
-
-if __name__ == "__main__":
-    asyncio.run(analizar_todo())
-
