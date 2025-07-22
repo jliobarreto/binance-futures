@@ -5,6 +5,7 @@ import numpy as np
 import ta
 import logging
 from logic.scorer import calcular_score
+from logic.longterm import valida_entrada_largo_plazo
 from data.models import IndicadoresTecnicos
 from config import VOLUMEN_MINIMO_USDT, GRIDS_GAP_PCT, MIN_SCORE_ALERTA
 
@@ -30,6 +31,11 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     adx = ta.trend.ADXIndicator(df_d[2], df_d[3], close_d, 14).adx().iloc[-1]
     boll_upper = ta.volatility.BollingerBands(close_d).bollinger_hband().iloc[-1]
     boll_lower = ta.volatility.BollingerBands(close_d).bollinger_lband().iloc[-1]
+
+    es_valido, motivo_lp = valida_entrada_largo_plazo(df_d, df_w)
+    if not es_valido:
+        logging.debug(f"{symbol} descartado por validación de largo plazo: {motivo_lp}")
+        return None
 
     precio = close_d.iloc[-1]
     volumen_actual = df_d[5].iloc[-1]

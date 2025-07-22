@@ -144,3 +144,16 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
         logging.error(f"Error enviando mensaje con botones: {e}")
         return ""
     
+def responder_callback(callback_id: str, text: str) -> None:
+    """Envía answerCallbackQuery para confirmar el callback en Telegram."""
+    if not TELEGRAM_TOKEN:
+        logging.error("Faltan credenciales de Telegram")
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery"
+    payload = {"callback_query_id": callback_id, "text": text}
+    try:
+        response = requests.post(url, data=payload, timeout=10)
+        response.raise_for_status()
+        logging.info("Respuesta answerCallbackQuery: %s", response.json())
+    except Exception as e:
+        logging.error(f"Error respondiendo callback: {e}")

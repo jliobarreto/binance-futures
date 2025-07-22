@@ -1,4 +1,3 @@
-from flask import Flask, request, jsonify
 import logging
 
 from notifier.notifier import manejar_callback
@@ -24,4 +23,3 @@ def webhook():
 
 if __name__ == '__main__':
     app.run(port=5000)  
-utils/telegram_utils.py
