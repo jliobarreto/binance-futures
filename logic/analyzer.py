@@ -32,6 +32,15 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     boll_upper = ta.volatility.BollingerBands(close_d).bollinger_hband().iloc[-1]
     boll_lower = ta.volatility.BollingerBands(close_d).bollinger_lband().iloc[-1]
 
+    tendencia_diaria = (
+        "Alcista" if ema20 > ema50 > ema200 else "Bajista" if ema20 < ema50 < ema200 else "Indefinida"
+    )
+    rango_bb_pct = (boll_upper - boll_lower) / close_d.iloc[-1]
+    consolidacion = (
+        "Consolidación activa detectada" if rango_bb_pct <= 0.05 else "Sin consolidación clara"
+    )
+    volumen_creciente = df_d[5].iloc[-3:].is_monotonic_increasing
+
     logging.debug(
         f"{symbol} indicadores: RSI1D={rsi_1d:.2f}, RSI1W={rsi_1w:.2f}, "
         f"MACD1D={macd_1d:.4f}, MACD_signal1D={macd_signal_1d:.4f}, "
@@ -57,18 +66,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         logging.debug(
             f"{symbol} descartado por volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
         )
-        return None
-
-    tipo = "LONG"
-    if rsi_1d > 70 and rsi_1w > 60 and macd_1d < macd_signal_1d and ema20 < ema50 < ema200:
-        tipo = "SHORT"
-
-    if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (tipo == "SHORT" and btc_alcista and eth_alcista):
-        logging.debug(
-            f"{symbol} descartado por contradicción con la tendencia global. Tipo: {tipo}, BTC alcista: {btc_alcista}, ETH alcista: {eth_alcista}"
-        )
-        return None
-
+@@ -72,37 +81,47 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
 
@@ -94,6 +92,15 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
 
     score, factors = calcular_score(tec)
     logging.debug(f"{symbol} score: {score} | factores: {factors}")
+    log_info = (
+        f"Análisis de {symbol}:\n"
+        f"- Tendencia diaria: {tendencia_diaria}\n"
+        f"- {consolidacion}\n"
+        f"- ADX: {adx:.2f}\n"
+        f"- Volumen creciente 3 días: {'Sí' if volumen_creciente else 'No'}\n"
+        f"[SCORE] Total: {score}/100"
+    )
+    logging.info(log_info)
     tec.trend_score = factors["trend"]
     tec.volume_score = factors["volume"]
     tec.momentum_score = factors["momentum"]
@@ -101,8 +108,9 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     tec.rr_score = factors["risk_reward"]
     tec.score = score
     if score >= MIN_SCORE_ALERTA:
+        logging.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
         return tec, score, factors
-    logging.debug(
-        f"{symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})"
+    logging.info(
+        f"[DECISIÓN] {symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})"
     )
     return None
