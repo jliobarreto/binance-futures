@@ -93,9 +93,11 @@ binance-futures/
    * Se analiza cada símbolo con `analyzer.py` y `structure_validator.py`.
    * Se asigna puntuación mediante `scorer.py`.
    * Si supera el umbral, se notifica vía Telegram con `notifier.py`.
-3. Se guarda en `data/signals/` la señal generada con su score y condición estructural.
-4. El usuario aprueba la operación desde Telegram (Cuenta 1 o Cuenta 2).
-5. Se ejecuta (fase futura) y se registra el resultado en `capital_tracker.xlsx`.
+3. Antes de analizar símbolos se consulta `risk_manager.puede_operar()`. Si
+   devuelve `False`, se envía una pausa y finaliza la ejecución.
+4. Se guarda en `data/signals/` la señal generada con su score y condición estructural.
+5. El usuario aprueba la operación desde Telegram (Cuenta 1 o Cuenta 2).
+6. Se ejecuta (fase futura) y se registra el resultado en `capital_tracker.xlsx`.
 
 ---
 
@@ -107,6 +109,19 @@ binance-futures/
 * `long_signal_conditions`: Diccionario de reglas específicas para posiciones long
 * `short_signal_conditions`: Reglas específicas para short
 * `telegram_token`, `telegram_chat_id`: Claves de autenticación para el bot
+* `max_consec_losses`: máximo de pérdidas consecutivas antes de pausar
+* `btc_drop_threshold`: caída intradía de BTC que detiene el trading
+* `volume_drop_threshold`: reducción de volumen global que activa la pausa
+* `trade_history_file`: ruta del CSV con el historial de resultados
+
+---
+
+## Gestión de riesgo intradía
+
+`risk_manager.puede_operar()` revisa el número de pérdidas consecutivas y el
+comportamiento reciente de BTC junto con el volumen agregado del mercado.
+Cuando alguno supera los umbrales de `config.py`, el bot pausa el análisis y
+envía una notificación de Telegram.
 
 ---
 

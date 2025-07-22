@@ -25,6 +25,7 @@ from logic.reporter import (
     imprimir_resumen_terminal,
 )
 from logic.market_context import obtener_contexto_mercado
+from logic.risk_manager import puede_operar
 from utils.telegram_utils import enviar_telegram, formatear_senal
 from binance.client import Client
 
@@ -41,6 +42,10 @@ async def analizar_todo():
     if not contexto.mercado_favorable:
         logging.info("Mercado desfavorable, análisis detenido")
         enviar_telegram("⚠️ Mercado desfavorable. Trading detenido.")
+        return
+    if not puede_operar():
+        logging.info("Operaciones pausadas por control de riesgo")
+        enviar_telegram("⏸ Operaciones pausadas por control de riesgo.")
         return
     btc_alcista = contexto.btc_alcista
     eth_alcista = contexto.eth_alcista
@@ -67,41 +72,3 @@ async def analizar_todo():
             )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
             logging.debug(f"Análisis de {sym} completado")
-            if resultado:
-                tec, score, _ = resultado
-                if max_score is None or score > max_score:
-                    max_score = score
-                if score >= MIN_SCORE_ALERTA:
-                    resultado_dict = {
-                        "Criptomoneda": sym,
-                        "Señal": tec.tipo,
-                        "Precio": tec.precio,
-                        "TP": tec.tp,
-                        "SL": tec.sl,
-                        "RSI": tec.rsi_1d,
-                        "MACD": "al alza" if tec.macd_1d > tec.macd_signal_1d else "a la baja",
-                        "Vitalidad": tec.volumen_actual / tec.volumen_promedio,
-                        "Grids": tec.grids,
-                        "Score": score,
-                    }
-                    resultados.append(resultado_dict)
-                    mensaje = formatear_senal(resultado_dict)
-                    enviar_telegram(mensaje)
-                    logging.info(f"Notificación enviada por Telegram para {sym}")
-        except Exception as e:
-            logging.error(f"Error analizando {sym}: {e}")
-
-    logging.info("Generando archivos de resultados")
-    archivo_excel = exportar_resultados_excel(resultados)
-    archivo_csv = exportar_resultados_csv(resultados)
-    imprimir_resumen_terminal(resultados, evaluados=len(symbols), score_max=max_score)
-    if archivo_excel:
-        enviar_telegram(f"📂 Archivo generado: {archivo_excel}")
-        logging.info(f"Notificación enviada por Telegram: {archivo_excel}")
-    if archivo_csv:
-        enviar_telegram(f"📂 Archivo generado: {archivo_csv}")
-        logging.info(f"Notificación enviada por Telegram: {archivo_csv}")
-
-
-if __name__ == "__main__":
-    asyncio.run(analizar_todo())

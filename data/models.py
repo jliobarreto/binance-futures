@@ -5,7 +5,7 @@ class IndicadoresTecnicos:
     symbol: str
     precio: float
     rsi_1d: float
-    si_1w: float
+    rsi_1w: float
     macd_1d: float
     macd_signal_1d: float
     ema20: float
@@ -30,4 +30,3 @@ class IndicadoresTecnicos:
     volatility_score: float | None = None
     rr_score: float | None = None
     score: float | None = None
-

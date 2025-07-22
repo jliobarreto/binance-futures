@@ -33,3 +33,9 @@ RSI_BUY_MAX = 55               # Nivel máximo de RSI para considerar acumulaci�
 RSI_OVERSOLD = 30              # Umbral de sobreventa
 RSI_OVERBOUGHT = 70            # Umbral de sobrecompra
 RSI_WEEKLY_OVERBOUGHT = 60     # RSI semanal por encima del cual se considera sobrecompra
+
+# === Control de riesgo ===
+MAX_CONSEC_LOSSES = 3                  # Máximo de pérdidas consecutivas permitidas
+BTC_DROP_THRESHOLD = 0.03              # Caída intradía de BTC para pausar trading (3%)
+VOLUME_DROP_THRESHOLD = 0.3            # Caída relativa del volumen global para pausar
+TRADE_HISTORY_FILE = "data/trade_history.csv"  # Ruta del historial de operaciones
