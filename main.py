@@ -34,7 +34,7 @@ async def analizar_todo():
     mensaje_tendencia = (
         f"🌐 BTC: {'Alcista ✅' if contexto.btc_alcista else 'Bajista ❌'} | "
         f"ETH: {'Alcista ✅' if contexto.eth_alcista else 'Bajista ❌'} | "
-        f"DXY: {'Alza ❌' if contexto.dxy_alcista else 'Baja ✅'} | "
+        f"DXY: {'Alza ✅' if contexto.dxy_alcista else 'Baja ❌'} | "
         f"VIX: {contexto.vix_valor:.1f}"
     )
     enviar_telegram(mensaje_tendencia)
