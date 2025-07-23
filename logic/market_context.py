@@ -38,7 +38,7 @@ class ContextoMercado:
     apto_short: bool = False
 
 def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.DataFrame:
-    """Descarga precios históricos usando :mod:`yfinance`.
+    """Descarga precios históricos usando :mod:`yfinance`."""
 @@ -164,173 +166,201 @@ def obtener_contexto_mercado() -> ContextoMercado:
     btc_close_d = (
         btc_d["Close"].astype(float).squeeze() if "Close" in btc_d else pd.Series(dtype=float)
