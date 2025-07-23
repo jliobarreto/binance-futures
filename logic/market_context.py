@@ -68,6 +68,18 @@ def _descargar_seguro(ticker: str, interval: str, period: str = "400d") -> pd.Da
         return pd.DataFrame()
 
 
+def _log_df_info(nombre: str, df: pd.DataFrame) -> None:
+    """Registra información resumida del :class:`DataFrame` recibido."""
+
+    if df.empty:
+        logging.debug(f"{nombre}: dataframe vacío")
+        return
+
+    inicio = df.index[0]
+    fin = df.index[-1]
+    logging.debug(f"{nombre}: {len(df)} filas desde {inicio} hasta {fin}")
+
+
 def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
     """Valida si una serie está en tendencia alcista usando EMAs.
 
@@ -91,7 +103,6 @@ def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
 def calcular_score_contexto(
     btc_alcista: bool, eth_alcista: bool, dxy_alcista: bool, vix_valor: float
 ) -> float:
-
     """Asigna un puntaje de 0 a 100 al contexto macro."""
     score = 0.0
     score += 40 if btc_alcista else 0
@@ -113,16 +124,23 @@ def obtener_contexto_mercado() -> ContextoMercado:
     conveniencia de operar en cada dirección.
     """
     btc_d = _descargar_seguro("BTC-USD", "1d")
+    _log_df_info("BTC-USD 1d", btc_d)
     btc_w = _descargar_seguro("BTC-USD", "1wk")
+    _log_df_info("BTC-USD 1wk", btc_w)
     eth_d = _descargar_seguro("ETH-USD", "1d")
+    _log_df_info("ETH-USD 1d", eth_d)
     eth_w = _descargar_seguro("ETH-USD", "1wk")
+    _log_df_info("ETH-USD 1wk", eth_w)
     dxy_d = _descargar_seguro("^DXY", "1d")
+    _log_df_info("^DXY 1d", dxy_d)
     if dxy_d.empty:
         logging.error("Datos diarios de ^DXY no disponibles. Probando DX-Y.NYB")
         dxy_d = _descargar_seguro("DX-Y.NYB", "1d")
         if dxy_d.empty:
             logging.error("Datos diarios de DX-Y.NYB no disponibles")
+    _log_df_info("DXY corregido 1d", dxy_d)
     vix_d = _descargar_seguro("^VIX", "1d", "100d")
+    _log_df_info("VIX 1d", vix_d)
 
     if btc_d.empty:
         logging.error("Datos diarios de BTC-USD no disponibles")
@@ -140,30 +158,45 @@ def obtener_contexto_mercado() -> ContextoMercado:
     btc_close_d = (
         btc_d["Close"].astype(float).squeeze() if "Close" in btc_d else pd.Series(dtype=float)
     )
+    logging.debug(f"BTC close 1d último valor: {btc_close_d.iloc[-1] if not btc_close_d.empty else 'N/A'}")
     btc_close_w = (
         btc_w["Close"].astype(float).squeeze() if "Close" in btc_w else pd.Series(dtype=float)
     )
+    logging.debug(f"BTC close 1w último valor: {btc_close_w.iloc[-1] if not btc_close_w.empty else 'N/A'}")
     eth_close_d = (
         eth_d["Close"].astype(float).squeeze() if "Close" in eth_d else pd.Series(dtype=float)
     )
+    logging.debug(f"ETH close 1d último valor: {eth_close_d.iloc[-1] if not eth_close_d.empty else 'N/A'}")
     eth_close_w = (
         eth_w["Close"].astype(float).squeeze() if "Close" in eth_w else pd.Series(dtype=float)
     )
+    logging.debug(f"ETH close 1w último valor: {eth_close_w.iloc[-1] if not eth_close_w.empty else 'N/A'}")
     dxy_close_d = (
         dxy_d["Close"].astype(float).squeeze() if "Close" in dxy_d else pd.Series(dtype=float)
     )
+    logging.debug(f"DXY close 1d último valor: {dxy_close_d.iloc[-1] if not dxy_close_d.empty else 'N/A'}")
     vix_close = (
         vix_d["Close"].astype(float).squeeze() if "Close" in vix_d else pd.Series(dtype=float)
     )
+    logging.debug(f"VIX close 1d último valor: {vix_close.iloc[-1] if not vix_close.empty else 'N/A'}")
 
     btc_alcista = _tendencia_alcista(btc_close_d) and _tendencia_alcista(btc_close_w)
     eth_alcista = _tendencia_alcista(eth_close_d) and _tendencia_alcista(eth_close_w)
     dxy_alcista = _tendencia_alcista(dxy_close_d)
     vix_valor = float(vix_close.iloc[-1].item()) if not vix_close.empty else 0.0
 
+    logging.debug(
+        f"Tendencias: BTC_alcista={btc_alcista}, ETH_alcista={eth_alcista}, "
+        f"DXY_alcista={dxy_alcista}, VIX={vix_valor:.2f}"
+    )
+
     mercado_favorable = btc_alcista and eth_alcista and not dxy_alcista and vix_valor < 25
 
     score_total = calcular_score_contexto(btc_alcista, eth_alcista, dxy_alcista, vix_valor)
+    logging.debug(
+        f"Score base contexto: {score_total:.1f} | BTC={btc_alcista}, ETH={eth_alcista}, "
+        f"DXY={dxy_alcista}, VIX={vix_valor:.2f}"
+    )
 
     # === Puntuación para operaciones LONG ===
     score_long_btc = 0
