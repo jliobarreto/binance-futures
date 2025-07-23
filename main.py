@@ -11,10 +11,12 @@ from config import (
 from utils.path import LOGS_DIR
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
+RUNTIME_LOG_FILE = LOGS_DIR / "runtime.log"
 logging.basicConfig(
-    filename=LOGS_DIR / "runtime.log",
+    filename=str(RUNTIME_LOG_FILE),
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s: %(message)s",
+    encoding="utf-8",
 )
 
 from data.symbols import obtener_pares_usdt

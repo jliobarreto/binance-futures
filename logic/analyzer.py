@@ -1,4 +1,5 @@
 # analyzer.py
+
 import pandas as pd
 import numpy as np
 import ta
@@ -56,8 +57,10 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     volumen_actual = df_d[5].iloc[-1]
     volumen_promedio = df_d[5].tail(30).mean()
 
-    logging.debug(
-@@ -72,37 +80,46 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
+git add .           
+git commit -m "V1.0.0.12"  
+git push      logging.debug(
+    def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
 
