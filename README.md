@@ -205,6 +205,15 @@ Los resultados se guardan en `output/backtests/` en los archivos `trades.csv` y 
 
 ---
 
+## Registro de ejecución
+
+Cada vez que se ejecuta `main.py` se genera un archivo de log en
+`logs/runtime.log`. Allí se almacenan todos los mensajes de depuración e
+información sobre cada criptomoneda procesada. Revisa este archivo para obtener
+un historial completo de la actividad del sistema.
+
+---
+
 ## Documentación adicional
 
 * Guía de despliegue en servidor (próxima versión)
