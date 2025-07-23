@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Market context evaluation utilities."""
+"""Market context evaluation utilities.
+
+Este módulo calcula el contexto de mercado en función de diversos
+indicadores macro y evalúa de forma diferenciada las condiciones para
+operar en **largo** o en **corto**.  Cada dirección obtiene un puntaje de
+0 a 100 basado en varios factores técnicos y de sentimiento.
+"""
 
 from dataclasses import dataclass
 import logging
@@ -7,6 +13,7 @@ import pandas as pd
 import ta
 import yfinance as yf
 from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
+
 
 @dataclass
 class ContextoMercado:
@@ -22,6 +29,18 @@ class ContextoMercado:
     apto_short: bool = False
 
 def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.DataFrame:
+    """Descarga precios históricos usando :mod:`yfinance`.
+
+    Parameters
+    ----------
+    ticker: str
+        Símbolo a descargar (por ejemplo ``"BTC-USD"``).
+    interval: str
+        Intervalo de las velas (``"1d"``, ``"1wk"``...).
+    period: str, default ``"400d"``
+        Rango de datos a obtener.
+    """
+
     df = yf.download(
         ticker,
         interval=interval,
@@ -70,7 +89,13 @@ def calcular_score_contexto(
 
 
 def obtener_contexto_mercado() -> ContextoMercado:
-    """Obtiene el contexto general del mercado usando datos macro."""
+    """Obtiene el contexto general del mercado.
+
+    Descarga precios de BTC, ETH, DXY y VIX para calcular distintas
+    señales de tendencia y volatilidad.  Con esta información se
+    asignan dos puntajes (``score_long`` y ``score_short``) que indican la
+    conveniencia de operar en cada dirección.
+    """
     try:
         btc_d = _descargar_datos("BTC-USD", "1d")
     except Exception as e:
@@ -96,9 +121,6 @@ def obtener_contexto_mercado() -> ContextoMercado:
         return ContextoMercado(False, False, False, 0.0, False, 0.0)
 
     try:
-        dxy_d = _descargar_datos("^DXY", "1d")
-    except Exception as e:
-        logging.error(f"Error descargando ^DXY 1d: {e}")
         return ContextoMercado(False, False, False, 0.0, False, 0.0)
 
     try:
@@ -124,14 +146,18 @@ def obtener_contexto_mercado() -> ContextoMercado:
     score_total = calcular_score_contexto(btc_alcista, eth_alcista, dxy_alcista, vix_valor)
 
     # === Puntuación para operaciones LONG ===
-    score_long = 0.0
+    score_long_btc = 0
+    score_long_rsi = 0
+    score_long_eth = 0
+    score_long_dxy = 0
     log_long: list[str] = []
+
     if not btc_w.empty:
         ema20 = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1]
         ema50 = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1]
         hl = len(btc_w) >= 2 and btc_w["Low"].iloc[-1] > btc_w["Low"].iloc[-2]
         if hl and ema20 > ema50:
-            score_long += 25
+            score_long_btc = 25
             log_long.append("BTC semanal: Higher Low validado – EMA20 > EMA50")
         else:
             log_long.append("BTC semanal: sin Higher Low o cruce alcista")
@@ -139,29 +165,41 @@ def obtener_contexto_mercado() -> ContextoMercado:
         rsi_w = ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
         vol_up = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] > btc_w["Volume"].iloc[-2]
         if rsi_w > 50 and vol_up:
-            score_long += 25
+            score_long_rsi = 25
         log_long.append(f"RSI semanal: {rsi_w:.1f}")
+
     if not eth_d.empty and _tendencia_alcista(eth_close_d):
-        score_long += 25
+        score_long_eth = 25
         log_long.append("ETH diario: tendencia alcista confirmada")
     else:
         log_long.append("ETH diario: sin tendencia alcista clara")
+
     dxy_bajista = not _tendencia_alcista(dxy_close_d)
     if dxy_bajista and vix_valor < 20:
-        score_long += 25
+        score_long_dxy = 25
         log_long.append("DXY bajista, VIX < 20")
     else:
         log_long.append("DXY o VIX sin confirmación")
 
+    score_long = score_long_btc + score_long_rsi + score_long_eth + score_long_dxy
+    log_long.append(f"Score parcial BTC: {score_long_btc}/25")
+    log_long.append(f"Score parcial RSI/Vol: {score_long_rsi}/25")
+    log_long.append(f"Score parcial ETH: {score_long_eth}/25")
+    log_long.append(f"Score parcial DXY-VIX: {score_long_dxy}/25")
+
     # === Puntuación para operaciones SHORT ===
-    score_short = 0.0
+    score_short_btc = 0
+    score_short_rsi = 0
+    score_short_eth = 0
+    score_short_dxy = 0
     log_short: list[str] = []
+
     if not btc_w.empty:
         ema20 = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1]
         ema50 = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1]
         lh = len(btc_w) >= 2 and btc_w["High"].iloc[-1] < btc_w["High"].iloc[-2]
         if lh and ema20 < ema50:
-            score_short += 25
+            score_short_btc = 25
             log_short.append("BTC semanal: Lower High validado – EMA20 < EMA50")
         else:
             log_short.append("BTC semanal: estructura neutral")
@@ -169,19 +207,27 @@ def obtener_contexto_mercado() -> ContextoMercado:
         rsi_w = ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
         vol_sell = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] >= btc_w["Volume"].iloc[-2]
         if rsi_w < 50 and vol_sell:
-            score_short += 25
+            score_short_rsi = 25
         log_short.append(f"RSI semanal: {rsi_w:.1f}")
+
     if not eth_d.empty and not _tendencia_alcista(eth_close_d):
-        score_short += 25
+        score_short_eth = 25
         log_short.append("ETH diario: tendencia bajista confirmada")
     else:
         log_short.append("ETH diario: sin confirmación bajista")
+
     dxy_alza = _tendencia_alcista(dxy_close_d)
     if dxy_alza and vix_valor > 20:
-        score_short += 25
+        score_short_dxy = 25
         log_short.append("DXY alcista, VIX > 20")
     else:
         log_short.append("DXY lateral – sin presión clara")
+
+    score_short = score_short_btc + score_short_rsi + score_short_eth + score_short_dxy
+    log_short.append(f"Score parcial BTC: {score_short_btc}/25")
+    log_short.append(f"Score parcial RSI/Vol: {score_short_rsi}/25")
+    log_short.append(f"Score parcial ETH: {score_short_eth}/25")
+    log_short.append(f"Score parcial DXY-VIX: {score_short_dxy}/25")
 
     apto_long = score_long >= SCORE_THRESHOLD_LONG
     apto_short = score_short >= SCORE_THRESHOLD_SHORT
@@ -208,10 +254,3 @@ def obtener_contexto_mercado() -> ContextoMercado:
         eth_alcista=eth_alcista,
         dxy_alcista=dxy_alcista,
         vix_valor=vix_valor,
-        mercado_favorable=mercado_favorable,
-        score_total=score_total,
-        score_long=score_long,
-        score_short=score_short,
-        apto_long=apto_long,
-        apto_short=apto_short,
-    )
