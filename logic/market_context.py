@@ -28,6 +28,7 @@ class ContextoMercado:
     apto_long: bool = False
     apto_short: bool = False
 
+
 def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.DataFrame:
     """Descarga precios históricos usando :mod:`yfinance`.
 
@@ -262,3 +263,17 @@ def obtener_contexto_mercado() -> ContextoMercado:
     )
 
     if not (apto_long or apto_short):
+        logging.info("Mercado desfavorable -> análisis detenido")
+
+    return ContextoMercado(
+        btc_alcista=btc_alcista,
+        eth_alcista=eth_alcista,
+        dxy_alcista=dxy_alcista,
+        vix_valor=vix_valor,
+        mercado_favorable=mercado_favorable,
+        score_total=score_total,
+        score_long=score_long,
+        score_short=score_short,
+        apto_long=apto_long,
+        apto_short=apto_short,
+    )
