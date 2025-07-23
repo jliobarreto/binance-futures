@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # analyzer.py
 
 import pandas as pd
@@ -16,7 +17,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     close_d = df_d[4]
     close_w = df_w[4]
 
-# Indicadores
+    # Indicadores
     rsi_1d = ta.momentum.RSIIndicator(close_d, 14).rsi().iloc[-1]
     rsi_1w = ta.momentum.RSIIndicator(close_w, 14).rsi().iloc[-1]
     macd_obj = ta.trend.MACD(close_d)
@@ -25,14 +26,6 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     ema20 = ta.trend.EMAIndicator(close_d, 20).ema_indicator().iloc[-1]
     ema50 = ta.trend.EMAIndicator(close_d, 50).ema_indicator().iloc[-1]
     ema200 = ta.trend.EMAIndicator(close_d, 200).ema_indicator().iloc[-1]
-    ema50_w = ta.trend.EMAIndicator(close_w, 50).ema_indicator().iloc[-1]
-    ema200_w = ta.trend.EMAIndicator(close_w, 200).ema_indicator().iloc[-1]
-    if ema50_w > ema200_w:
-        tendencia_semanal = "Alcista"
-    elif ema50_w < ema200_w:
-        tendencia_semanal = "Bajista"
-    else:
-        tendencia_semanal = "Indefinida"
     atr = ta.volatility.AverageTrueRange(df_d[2], df_d[3], close_d, 14).average_true_range().iloc[-1]
     mfi = ta.volume.MFIIndicator(df_d[2], df_d[3], close_d, df_d[5], 14).money_flow_index().iloc[-1]
     obv = ta.volume.OnBalanceVolumeIndicator(close_d, df_d[5]).on_balance_volume().iloc[-1]
@@ -69,7 +62,6 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     volumen_promedio = df_d[5].tail(30).mean()
 
     logging.debug(
-<<<<<<< HEAD
         f"Analizando {symbol} | Volumen actual: {volumen_actual} | Volumen promedio: {volumen_promedio}"
     )
 
@@ -91,12 +83,8 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         )
         return None
 
-=======
-    def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
->>>>>>> cbc273a49e5b86b9352404e6810c52e0ec2364fb
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
-    )    
 
     # Resistencia o soporte
     resistencia = df_d[2].rolling(60).max().iloc[-1] if tipo == 'LONG' else df_d[3].rolling(60).min().iloc[-1]
@@ -116,21 +104,19 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
 
     logging.debug(
         f"{symbol} valores calculados: precio={precio}, tp={tp}, sl={sl}, grids={grids}"
-<<<<<<< HEAD
-=======
     )
 
     score, factors = calcular_score(tec)
     logging.debug(f"{symbol} score: {score} | factores: {factors}")
-
-    log_info = [
-        f"\n🪙 {symbol}",
-        f"- Tipo: {tipo}",
-        f"- Score: {score:.2f}",
-        f"- Tendencia semanal: {tendencia_semanal}",
-        f"- RSI diario/semanal: {rsi_1d:.2f}/{rsi_1w:.2f}",
-    ]
-    logging.info("\n".join(log_info))
+    log_info = (
+        f"Análisis de {symbol}:"
+        f"\n- Tendencia diaria: {tendencia_diaria}"
+        f"\n- {consolidacion}"
+        f"\n- ADX: {adx:.2f}"
+        f"\n- Volumen creciente 3 días: {'Sí' if volumen_creciente else 'No'}"
+        f"\n[SCORE] Total: {score}/100"
+    )
+    logging.info(log_info)
     tec.trend_score = factors["trend"]
     tec.volume_score = factors["volume"]
     tec.momentum_score = factors["momentum"]
@@ -138,9 +124,9 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     tec.rr_score = factors["risk_reward"]
     tec.score = score
     if score >= MIN_SCORE_ALERTA:
+        logging.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
         return tec, score, factors
-    logging.debug(
-        f"{symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})"
+    logging.info(
+        f"[DECISIÓN] {symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})"
     )
     return None
->>>>>>> cbc273a49e5b86b9352404e6810c52e0ec2364fb
