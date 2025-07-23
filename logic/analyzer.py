@@ -57,10 +57,11 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     volumen_actual = df_d[5].iloc[-1]
     volumen_promedio = df_d[5].tail(30).mean()
 
-        logging.debug(
+    logging.debug(
     def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
+    )    
 
     # Resistencia o soporte
     resistencia = df_d[2].rolling(60).max().iloc[-1] if tipo == 'LONG' else df_d[3].rolling(60).min().iloc[-1]
