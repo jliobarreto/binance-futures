@@ -31,7 +31,11 @@ def exportar_resultados_csv(resultados: list[dict], carpeta: str = "output") -> 
         return ""
 
     df = pd.DataFrame(resultados).sort_values("Score", ascending=False)
-@@ -37,25 +39,37 @@ def exportar_resultados_csv(resultados: list[dict], carpeta: str = "output") ->
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    Path(carpeta).mkdir(parents=True, exist_ok=True)
+    archivo = f"{carpeta}/señales_long_short_{timestamp}.csv"
+    df.to_csv(archivo, index=False)
+    ruta = str(Path(archivo).resolve())
     logging.info(f"Archivo CSV exportado en {ruta}")
     return archivo
 
@@ -57,7 +61,6 @@ def imprimir_resumen_terminal(
         logging.info(
             f"✅ {r['Criptomoneda']} | Tipo: {r['Señal']} | Score: {r['Score']} | Entrada: {r['Precio']:.4f} | TP: {r['TP']:.4f} | SL: {r['SL']:.4f}"
         )
-
 
 def registrar_contexto_csv(datos: dict, archivo: str | Path = LOGS_DIR / "context_summary.csv") -> str:
     """Guarda un resumen del contexto de mercado en un CSV."""
