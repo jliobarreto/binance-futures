@@ -44,7 +44,7 @@ async def analizar_todo():
     enviar_telegram(mensaje_tendencia)
     logging.info("Contexto de mercado obtenido")
     logging.info(f"Score total de contexto: {contexto.score_total}/100")
-    if not contexto.mercado_favorable:
+    if not contexto.apto_long and not contexto.apto_short:
         logging.info("Mercado desfavorable, análisis detenido")
         enviar_telegram("⚠️ Mercado desfavorable. Trading detenido.")
         return
@@ -70,49 +70,3 @@ async def analizar_todo():
                 interval=Client.KLINE_INTERVAL_1DAY,
                 limit=210,
             )
-            klines_w = client.get_klines(
-                symbol=sym,
-                interval=Client.KLINE_INTERVAL_1WEEK,
-                limit=210,
-            )
-            logging.debug(
-                f"{sym} datos diarios: {len(klines_d)} velas, semanales: {len(klines_w)}"
-            )
-            resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
-            logging.info(f"Análisis de {sym} completado")
-            if resultado:
-                tec, score, _ = resultado
-                if max_score is None or score > max_score:
-                    max_score = score
-                resultado_dict = {
-                    "Criptomoneda": tec.symbol,
-                    "Señal": tec.tipo,
-                    "Precio": tec.precio,
-                    "TP": tec.tp,
-                    "SL": tec.sl,
-                    "RSI": tec.rsi_1d,
-                    "MACD": tec.macd_1d,
-                    "MACD_signal": tec.macd_signal_1d,
-                    "Vitalidad": tec.volumen_actual / tec.volumen_promedio if tec.volumen_promedio else None,
-                    "Grids": tec.grids,
-                    "Score": score,
-                }
-                resultados.append(resultado_dict)
-                logging.info(f"Resultado de {sym}: {resultado_dict}")
-                mensaje_senal = formatear_senal(resultado_dict)
-                enviar_telegram(mensaje_senal)
-        except Exception as e:
-            logging.error(f"Error analizando {sym}: {e}")
-
-    archivo_excel = exportar_resultados_excel(resultados)
-    archivo_csv = exportar_resultados_csv(resultados)
-    imprimir_resumen_terminal(resultados, len(symbols), max_score)
-
-    if archivo_excel:
-        enviar_telegram(f"📊 Reporte Excel generado: {archivo_excel}")
-    if archivo_csv:
-        enviar_telegram(f"📊 Reporte CSV generado: {archivo_csv}")
-
-
-if __name__ == "__main__":
-    asyncio.run(analizar_todo())
