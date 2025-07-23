@@ -15,6 +15,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")     # ID del chat para notifica
 VOLUMEN_MINIMO_USDT = 300_000      # Monto mínimo en dólares para considerar un símbolo
 GRIDS_GAP_PCT = 0.024              # Separación entre niveles de grids
 MIN_SCORE_ALERTA = 30             # Puntuación mínima para enviar alerta a Telegram
+MIN_SCORE_MERCADO = 65            # Umbral mínimo de score del mercado
 LIMITE_ANALISIS = None             # Límite de símbolos a evaluar; None = sin límite
 
 # === Exclusión de pares apalancados, experimentales o inestables ===
