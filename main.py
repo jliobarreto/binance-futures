@@ -11,10 +11,13 @@ from config import (
 from utils.path import LOGS_DIR
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
+RUNTIME_LOG_FILE = LOGS_DIR / "runtime.log"
 logging.basicConfig(
-    filename=LOGS_DIR / "runtime.log",
+    filename=str(RUNTIME_LOG_FILE),
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s: %(message)s",
+    encoding="utf-8",
+    force=True,
 )
 
 from data.symbols import obtener_pares_usdt
@@ -59,7 +62,7 @@ async def analizar_todo():
     max_score = None
 
     for sym in symbols:
-        logging.debug(f"Analizando {sym}")
+        logging.info(f"Analizando {sym}")
         try:
             klines_d = client.get_klines(
                 symbol=sym,
@@ -75,7 +78,7 @@ async def analizar_todo():
                 f"{sym} datos diarios: {len(klines_d)} velas, semanales: {len(klines_w)}"
             )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
-            logging.debug(f"Análisis de {sym} completado")
+            logging.info(f"Análisis de {sym} completado")
             if resultado:
                 tec, score, _ = resultado
                 if max_score is None or score > max_score:
@@ -94,7 +97,7 @@ async def analizar_todo():
                     "Score": score,
                 }
                 resultados.append(resultado_dict)
-                logging.debug(f"Resultado de {sym}: {resultado_dict}")
+                logging.info(f"Resultado de {sym}: {resultado_dict}")
                 mensaje_senal = formatear_senal(resultado_dict)
                 enviar_telegram(mensaje_senal)
         except Exception as e:
