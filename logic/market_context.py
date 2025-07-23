@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+"""Market context evaluation utilities."""
+
 from dataclasses import dataclass
 import logging
 import pandas as pd
 import ta
 import yfinance as yf
-from config import MIN_SCORE_MERCADO
 
 @dataclass
 class ContextoMercado:
@@ -30,7 +32,6 @@ def _descargar_cierre(ticker: str, interval: str, period: str = "400d") -> pd.Se
 def _tendencia_alcista(close: pd.Series) -> bool:
     if close.empty or len(close) < 200:
         return False
-<<<<<<< HEAD
     ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator().iloc[-1]
     ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator().iloc[-1]
     return ema50 > ema200 and close.iloc[-1] > ema50
@@ -70,10 +71,6 @@ def obtener_contexto_mercado() -> ContextoMercado:
     except Exception as e:
         logging.error(f"Error descargando ETH-USD 1d: {e}")
         return ContextoMercado(False, False, False, 0.0, False, 0.0)
-=======
-@@ -54,34 +55,67 @@ def obtener_contexto_mercado() -> ContextoMercado:
-        return ContextoMercado(False, False, False, 0.0, False)
->>>>>>> cbc273a49e5b86b9352404e6810c52e0ec2364fb
 
     try:
         eth_w = _descargar_cierre("ETH-USD", "1wk")
@@ -98,40 +95,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
     dxy_alcista = _tendencia_alcista(dxy_d)
     vix_valor = float(vix_d.iloc[-1]) if not vix_d.empty else 0.0
 
-    # Razones descriptivas para el registro
-    btc_reason = (
-        "EMA50>EMA200 y precio>EMA50" if btc_alcista else "EMA50<EMA200 o precio<EMA50"
-    )
-    eth_reason = (
-        "EMA50>EMA200 y precio>EMA50" if eth_alcista else "EMA50<EMA200 o precio<EMA50"
-    )
-    dxy_reason = (
-        "DXY en tendencia bajista" if not dxy_alcista else "DXY en tendencia alcista"
-    )
-    vix_reason = (
-        "volatilidad elevada" if vix_valor >= 20 else "volatilidad controlada"
-    )
-
-    score_total = (
-        (25 if btc_alcista else 0)
-        + (25 if eth_alcista else 0)
-        + (25 if not dxy_alcista else 0)
-        + (25 if vix_valor < 25 else 0)
-    )
-    mercado_favorable = score_total >= MIN_SCORE_MERCADO
-
-    logging.info(
-        "Contexto macro | "
-        f"BTC: {'alcista' if btc_alcista else 'bajista'} → {btc_reason} | "
-        f"ETH: {'alcista' if eth_alcista else 'bajista'} → {eth_reason} | "
-        f"DXY: {'alcista' if dxy_alcista else 'bajista'} → {dxy_reason} | "
-        f"VIX: {vix_valor:.1f} → {vix_reason}"
-    )
-    logging.info(
-        f"Score de contexto: {score_total}/100 - Umbral requerido: {MIN_SCORE_MERCADO}"
-    )
-    if not mercado_favorable:
-        logging.info("Contexto desfavorable")
+    mercado_favorable = btc_alcista and eth_alcista and not dxy_alcista and vix_valor < 25
 
     score_total = calcular_score_contexto(btc_alcista, eth_alcista, dxy_alcista, vix_valor)
 
