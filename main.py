@@ -42,6 +42,7 @@ async def analizar_todo():
     )
     enviar_telegram(mensaje_tendencia)
     logging.info("Contexto de mercado obtenido")
+    logging.info(f"Score total de contexto: {contexto.score_total}/100")
     if not contexto.mercado_favorable:
         logging.info("Mercado desfavorable, análisis detenido")
         enviar_telegram("⚠️ Mercado desfavorable. Trading detenido.")
@@ -96,10 +97,21 @@ async def analizar_todo():
                     "Score": score,
                 }
                 resultados.append(resultado_dict)
-                logging.debug(f"Resultado de {sym}: {resultado_dict}")
+                logging.info(f"Resultado de {sym}: {resultado_dict}")
                 mensaje_senal = formatear_senal(resultado_dict)
                 enviar_telegram(mensaje_senal)
         except Exception as e:
             logging.error(f"Error analizando {sym}: {e}")
 
     archivo_excel = exportar_resultados_excel(resultados)
+    archivo_csv = exportar_resultados_csv(resultados)
+    imprimir_resumen_terminal(resultados, len(symbols), max_score)
+
+    if archivo_excel:
+        enviar_telegram(f"📊 Reporte Excel generado: {archivo_excel}")
+    if archivo_csv:
+        enviar_telegram(f"📊 Reporte CSV generado: {archivo_csv}")
+
+
+if __name__ == "__main__":
+    asyncio.run(analizar_todo())
