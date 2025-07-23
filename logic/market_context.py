@@ -34,9 +34,21 @@ def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.Dat
     return df
 
 
-def _tendencia_alcista(close: pd.Series) -> bool:
+def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
+    """Valida si una serie está en tendencia alcista usando EMAs.
+
+    Se asegura que ``close`` sea una :class:`pandas.Series` antes de
+    calcular los indicadores técnicos para evitar errores de dimensiones.
+    """
+
+    if isinstance(close, pd.DataFrame):
+        close = close.squeeze()
+
+    assert isinstance(close, pd.Series), "close debe ser una Serie 1D"
+
     if close.empty or len(close) < 200:
         return False
+
     ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator().iloc[-1]
     ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator().iloc[-1]
     return ema50 > ema200 and close.iloc[-1] > ema50
