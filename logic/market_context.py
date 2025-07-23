@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Market context evaluation utilities.
-
-Este módulo calcula el contexto de mercado en función de diversos
-indicadores macro y evalúa de forma diferenciada las condiciones para
-operar en **largo** o en **corto**.  Cada dirección obtiene un puntaje de
-0 a 100 basado en varios factores técnicos y de sentimiento.
-"""
 
 from dataclasses import dataclass
 import logging
 import pandas as pd
 import ta
 import yfinance as yf
-from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
+try:  # Permite ejecutar este módulo directamente desde la carpeta logic
+    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
+except ModuleNotFoundError:  # pragma: no cover - ajuste para entornos fuera del paquete
+    import sys
+    from pathlib import Path
 
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
 
 @dataclass
 class ContextoMercado:
