@@ -58,7 +58,7 @@ async def analizar_todo():
     max_score = None
 
     for sym in symbols:
-        logging.debug(f"Analizando {sym}")
+        logging.info(f"Analizando {sym}")
         try:
             klines_d = client.get_klines(
                 symbol=sym,
@@ -74,7 +74,7 @@ async def analizar_todo():
                 f"{sym} datos diarios: {len(klines_d)} velas, semanales: {len(klines_w)}"
             )
             resultado = analizar_simbolo(sym, klines_d, klines_w, btc_alcista, eth_alcista)
-            logging.debug(f"Análisis de {sym} completado")
+            logging.info(f"Análisis de {sym} completado")
             if resultado:
                 tec, score, _ = resultado
                 if max_score is None or score > max_score:
@@ -100,14 +100,3 @@ async def analizar_todo():
             logging.error(f"Error analizando {sym}: {e}")
 
     archivo_excel = exportar_resultados_excel(resultados)
-    archivo_csv = exportar_resultados_csv(resultados)
-    imprimir_resumen_terminal(resultados, len(symbols), max_score)
-
-    if archivo_excel:
-        enviar_telegram(f"📊 Reporte Excel generado: {archivo_excel}")
-    if archivo_csv:
-        enviar_telegram(f"📊 Reporte CSV generado: {archivo_csv}")
-
-
-if __name__ == "__main__":
-    asyncio.run(analizar_todo())

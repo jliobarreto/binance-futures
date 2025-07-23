@@ -1,5 +1,4 @@
 # analyzer.py
-
 import pandas as pd
 import numpy as np
 import ta
@@ -25,6 +24,14 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     ema20 = ta.trend.EMAIndicator(close_d, 20).ema_indicator().iloc[-1]
     ema50 = ta.trend.EMAIndicator(close_d, 50).ema_indicator().iloc[-1]
     ema200 = ta.trend.EMAIndicator(close_d, 200).ema_indicator().iloc[-1]
+    ema50_w = ta.trend.EMAIndicator(close_w, 50).ema_indicator().iloc[-1]
+    ema200_w = ta.trend.EMAIndicator(close_w, 200).ema_indicator().iloc[-1]
+    if ema50_w > ema200_w:
+        tendencia_semanal = "Alcista"
+    elif ema50_w < ema200_w:
+        tendencia_semanal = "Bajista"
+    else:
+        tendencia_semanal = "Indefinida"
     atr = ta.volatility.AverageTrueRange(df_d[2], df_d[3], close_d, 14).average_true_range().iloc[-1]
     mfi = ta.volume.MFIIndicator(df_d[2], df_d[3], close_d, df_d[5], 14).money_flow_index().iloc[-1]
     obv = ta.volume.OnBalanceVolumeIndicator(close_d, df_d[5]).on_balance_volume().iloc[-1]
@@ -50,25 +57,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     volumen_promedio = df_d[5].tail(30).mean()
 
     logging.debug(
-        f"Analizando {symbol} | Volumen actual: {volumen_actual} | Volumen promedio: {volumen_promedio}"
-    )
-
-    if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
-        logging.debug(
-            f"{symbol} descartado por volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
-        )
-        return None
-
-    tipo = "LONG"
-    if rsi_1d > 70 and rsi_1w > 60 and macd_1d < macd_signal_1d and ema20 < ema50 < ema200:
-        tipo = "SHORT"
-
-    if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (tipo == "SHORT" and btc_alcista and eth_alcista):
-        logging.debug(
-            f"{symbol} descartado por contradicción con la tendencia global. Tipo: {tipo}, BTC alcista: {btc_alcista}, ETH alcista: {eth_alcista}"
-        )
-        return None
-
+@@ -72,37 +80,46 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
 
@@ -94,6 +83,15 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
 
     score, factors = calcular_score(tec)
     logging.debug(f"{symbol} score: {score} | factores: {factors}")
+
+    log_info = [
+        f"\n🪙 {symbol}",
+        f"- Tipo: {tipo}",
+        f"- Score: {score:.2f}",
+        f"- Tendencia semanal: {tendencia_semanal}",
+        f"- RSI diario/semanal: {rsi_1d:.2f}/{rsi_1w:.2f}",
+    ]
+    logging.info("\n".join(log_info))
     tec.trend_score = factors["trend"]
     tec.volume_score = factors["volume"]
     tec.momentum_score = factors["momentum"]
