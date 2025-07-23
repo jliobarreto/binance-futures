@@ -299,18 +299,18 @@ def obtener_contexto_mercado() -> ContextoMercado:
     apto_long = score_long >= SCORE_THRESHOLD_LONG
     apto_short = score_short >= SCORE_THRESHOLD_SHORT
 
-    logging.info("[LONG CONTEXT]")
-    for linea in log_long:
-        logging.info("  " + linea)
+    resumen_long = "\n".join("  " + linea for linea in log_long)
     logging.info(
-        f"  Score global LONG: {score_long:.0f}/100 {'→ Apto para operar en largo' if apto_long else '→ No apto para operar en largo'}"
+        "[LONG CONTEXT]\n" + resumen_long +
+        f"\n  Score global LONG: {score_long:.0f}/100 "
+        f"{'→ Apto para operar en largo' if apto_long else '→ No apto para operar en largo'}"
     )
 
-    logging.info("[SHORT CONTEXT]")
-    for linea in log_short:
-        logging.info("  " + linea)
+    resumen_short = "\n".join("  " + linea for linea in log_short)
     logging.info(
-        f"  Score global SHORT: {score_short:.0f}/100 {'→ Apto para operar en corto' if apto_short else '→ No apto para operar en corto'}"
+        "[SHORT CONTEXT]\n" + resumen_short +
+        f"\n  Score global SHORT: {score_short:.0f}/100 "
+        f"{'→ Apto para operar en corto' if apto_short else '→ No apto para operar en corto'}"
     )
 
     if not (apto_long or apto_short):
