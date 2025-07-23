@@ -17,6 +17,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s: %(message)s",
     encoding="utf-8",
+    force=True,
 )
 
 from data.symbols import obtener_pares_usdt
