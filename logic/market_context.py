@@ -241,4 +241,3 @@ def obtener_contexto_mercado() -> ContextoMercado:
         apto_long=apto_long,
         apto_short=apto_short,
     )
-logic/reporter.py
