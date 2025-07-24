@@ -165,12 +165,13 @@ def obtener_contexto_mercado() -> ContextoMercado:
         logging.error("Datos diarios de VIX no disponibles")
 
     btc_close_d = (
-@@ -259,140 +256,121 @@ def obtener_contexto_mercado() -> ContextoMercado:
+    def obtener_contexto_mercado() -> ContextoMercado:
 
     btc_alcista = _tendencia_alcista(btc_close_d) and _tendencia_alcista(btc_close_w)
     eth_alcista = _tendencia_alcista(eth_close_d) and _tendencia_alcista(eth_close_w)
     dxy_alcista = _tendencia_alcista(dxy_close_d)
     vix_valor = vix_close.iloc[-1].item() if not vix_close.empty else 0.0
+    
 
     logging.debug(
         f"Tendencias: BTC_alcista={btc_alcista}, ETH_alcista={eth_alcista}, "
