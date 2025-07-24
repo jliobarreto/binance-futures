@@ -202,7 +202,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
         if hl and ema20 > ema50:
             score_long_btc = 25
         log_long.append(
-            f"BTC semanal HL {hl} | EMA20 {ema20:.2f} > EMA50 {ema50:.2f} - Score: {score_long_btc}/25"
+            (
+                f"BTC semanal HL {hl} | EMA20 {ema20:.2f} > EMA50 {ema50:.2f} - "
+                f"Score: {score_long_btc}/25"
+            )
         )
 
         rsi_w = (
@@ -214,7 +217,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
         if rsi_w > 50 and vol_up:
             score_long_rsi = 25
         log_long.append(
-            f"RSI semanal {rsi_w:.1f} | Volumen creciente {vol_up} - Score: {score_long_rsi}/25"
+            (
+                f"RSI semanal {rsi_w:.1f} | Volumen creciente {vol_up} - "
+                f"Score: {score_long_rsi}/25"
+            )
         )
     else:
         log_long.append("BTC semanal: datos insuficientes - Score: 0/25")
@@ -226,7 +232,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
         if alcista_eth and eth_rsi_d > 50 and vol_up_eth:
             score_long_eth = 25
         log_long.append(
-            f"ETH EMA20 {eth_ema20_d:.2f} > EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} | Volumen up {vol_up_eth} - Score: {score_long_eth}/25"
+            (
+                f"ETH EMA20 {eth_ema20_d:.2f} > EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} "
+                f"| Volumen up {vol_up_eth} - Score: {score_long_eth}/25"
+            )
         )
     else:
         log_long.append("ETH diario sin datos - Score: 0/25")
@@ -235,7 +244,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
     if dxy_bajista and vix_valor < 20:
         score_long_dxy = 25
     log_long.append(
-        f"DXY bajista {dxy_bajista} | VIX {vix_valor:.2f} - Score: {score_long_dxy}/25"
+        (
+            f"DXY bajista {dxy_bajista} | VIX {vix_valor:.2f} - "
+            f"Score: {score_long_dxy}/25"
+        )
     )
 
     score_long = score_long_btc + score_long_rsi + score_long_eth + score_long_dxy
@@ -262,7 +274,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
         if lh and ema20 < ema50:
             score_short_btc = 25
         log_short.append(
-            f"BTC semanal LH {lh} | EMA20 {ema20:.2f} < EMA50 {ema50:.2f} - Score: {score_short_btc}/25"
+            (
+                f"BTC semanal LH {lh} | EMA20 {ema20:.2f} < EMA50 {ema50:.2f} - "
+                f"Score: {score_short_btc}/25"
+            )
         )
 
         rsi_w = (
@@ -274,7 +289,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
         if rsi_w < 50 and vol_sell:
             score_short_rsi = 25
         log_short.append(
-            f"RSI semanal {rsi_w:.1f} | Volumen venta {vol_sell} - Score: {score_short_rsi}/25"
+            (
+                f"RSI semanal {rsi_w:.1f} | Volumen venta {vol_sell} - "
+                f"Score: {score_short_rsi}/25"
+            )
         )
     else:
         log_short.append("BTC semanal: datos insuficientes - Score: 0/25")
@@ -286,7 +304,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
         if bajista_eth and eth_rsi_d < 50 and vol_sell_eth:
             score_short_eth = 25
         log_short.append(
-            f"ETH EMA20 {eth_ema20_d:.2f} < EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} | Vol venta {vol_sell_eth} - Score: {score_short_eth}/25"
+            (
+                f"ETH EMA20 {eth_ema20_d:.2f} < EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} "
+                f"| Vol venta {vol_sell_eth} - Score: {score_short_eth}/25"
+            )
         )
     else:
         log_short.append("ETH diario sin datos - Score: 0/25")
@@ -295,38 +316,10 @@ def obtener_contexto_mercado() -> ContextoMercado:
     if dxy_alza and vix_valor > 20:
         score_short_dxy = 25
     log_short.append(
-
-        log_short.append(
-            f"BTC semanal LH {lh} | EMA20 {ema20:.2f} < EMA50 {ema50:.2f} - Score: {score_short_btc}/25"
+        (
+            f"DXY alcista {dxy_alza} | VIX {vix_valor:.2f} - "
+            f"Score: {score_short_dxy}/25"
         )
-
-        rsi_w = ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
-        vol_sell = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] >= btc_w["Volume"].iloc[-2]
-        if rsi_w < 50 and vol_sell:
-            score_short_rsi = 25
-        log_short.append(
-            f"RSI semanal {rsi_w:.1f} | Volumen venta {vol_sell} - Score: {score_short_rsi}/25"
-        )
-    else:
-        log_short.append("BTC semanal: datos insuficientes - Score: 0/25")
-        log_short.append("RSI semanal: datos insuficientes - Score: 0/25")
-
-    if not eth_d.empty:
-        vol_sell_eth = len(eth_d) >= 2 and eth_d["Volume"].iloc[-1] >= eth_d["Volume"].iloc[-2]
-        bajista_eth = eth_ema20_d < eth_ema50_d
-        if bajista_eth and eth_rsi_d < 50 and vol_sell_eth:
-            score_short_eth = 25
-        log_short.append(
-            f"ETH EMA20 {eth_ema20_d:.2f} < EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} | Vol venta {vol_sell_eth} - Score: {score_short_eth}/25"
-        )
-    else:
-        log_short.append("ETH diario sin datos - Score: 0/25")
-
-    dxy_alza = _tendencia_alcista(dxy_close_d)
-    if dxy_alza and vix_valor > 20:
-        score_short_dxy = 25
-    log_short.append(
-        f"DXY alcista {dxy_alza} | VIX {vix_valor:.2f} - Score: {score_short_dxy}/25"
     )
 
     score_short = score_short_btc + score_short_rsi + score_short_eth + score_short_dxy
@@ -351,7 +344,6 @@ def obtener_contexto_mercado() -> ContextoMercado:
         f"\n  Score global SHORT: {score_short:.0f}/100 "
         f"{'→ Apto para operar en corto' if apto_short else '→ No apto para operar en corto'}"
     )
-
     mercado_favorable = apto_long or apto_short
     if not mercado_favorable:
         logging.info("Mercado desfavorable -> análisis detenido")
@@ -383,3 +375,5 @@ def obtener_contexto_mercado() -> ContextoMercado:
         apto_long=apto_long,
         apto_short=apto_short,
     )
+    )
+    
