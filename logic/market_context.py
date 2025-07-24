@@ -38,16 +38,9 @@ class ContextoMercado:
     apto_long: bool = False
     apto_short: bool = False
 
+
 def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.DataFrame:
-    """Descarga precios históricos usando :mod:`yfinance` con reintentos.
-
-    Si ``interval`` es ``"1wk"`` se descargan ~5 años por defecto para poder
-    calcular indicadores de largo plazo como la EMA200.
-    """
-
-    if interval == "1wk" and period == "400d":
-        period = "260wk"
-
+    """Descarga precios históricos usando :mod:`yfinance` con reintentos."""
     for _ in range(3):
         try:
             df = yf.download(
@@ -57,19 +50,13 @@ def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.Dat
                 progress=False,
                 auto_adjust=False,
             )
-            if interval == "1wk" and len(df) < 200:
-                df = yf.download(
-                    ticker,
-                    interval=interval,
-                    period="max",
-                    progress=False,
-                    auto_adjust=False,
-                )
             return df
-        except Exception as e:  # pragma: no cover - dependencias externas
-            logging.warning(f"Error descargando {ticker} {interval}: {e}")
+        except Exception as exc:  # pragma: no cover - dependencias externas
+            logging.warning(f"No se pudieron obtener datos para {ticker} {interval}: {exc}")
             time.sleep(1)
     return pd.DataFrame()
+
+
 def obtener_contexto_mercado() -> ContextoMercado:
     btc_d = _descargar_datos("BTC-USD", "1d")
     btc_w = _descargar_datos("BTC-USD", "1wk")
@@ -77,6 +64,9 @@ def obtener_contexto_mercado() -> ContextoMercado:
     eth_w = _descargar_datos("ETH-USD", "1wk")
     dxy_d = _descargar_datos("DX-Y.NYB", "1d")
     vix_d = _descargar_datos("^VIX", "1d")
+
+    if btc_d.empty or btc_w.empty or eth_d.empty or eth_w.empty or dxy_d.empty or vix_d.empty:
+        logging.error("Fallo la descarga de datos de mercado. Contexto incompleto")
 
     btc_close_d = (
         btc_d["Close"].astype(float).squeeze() if "Close" in btc_d else pd.Series(dtype=float)
@@ -103,7 +93,157 @@ def obtener_contexto_mercado() -> ContextoMercado:
     )
     logging.debug(f"VIX close 1d último valor: {vix_close.iloc[-1] if not vix_close.empty else 'N/A'}")
 
-@@ -219,25 +257,36 @@ def obtener_contexto_mercado() -> ContextoMercado:
+    btc_ema20_w = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1] if not btc_w.empty else 0.0
+    btc_ema50_w = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1] if not btc_w.empty else 0.0
+    btc_rsi_w = ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
+
+    eth_ema20_d = ta.trend.EMAIndicator(eth_close_d, 20).ema_indicator().iloc[-1] if not eth_d.empty else 0.0
+    eth_ema50_d = ta.trend.EMAIndicator(eth_close_d, 50).ema_indicator().iloc[-1] if not eth_d.empty else 0.0
+    eth_rsi_d = ta.momentum.RSIIndicator(eth_close_d, 14).rsi().iloc[-1] if len(eth_close_d) >= 14 else 0.0
+
+    btc_alcista = _tendencia_alcista(btc_close_d) and _tendencia_alcista(btc_close_w)
+    eth_alcista = _tendencia_alcista(eth_close_d) and _tendencia_alcista(eth_close_w)
+    dxy_alcista = _tendencia_alcista(dxy_close_d)
+    vix_valor = float(vix_close.iloc[-1].item()) if not vix_close.empty else 0.0
+
+    logging.debug(
+        f"Tendencias: BTC_alcista={btc_alcista}, ETH_alcista={eth_alcista}, "
+        f"DXY_alcista={dxy_alcista}, VIX={vix_valor:.2f}"
+    )
+
+    score_total = calcular_score_contexto(btc_alcista, eth_alcista, dxy_alcista, vix_valor)
+    logging.debug(
+        f"Score base contexto: {score_total:.1f} | BTC={btc_alcista}, ETH={eth_alcista}, "
+        f"DXY={dxy_alcista}, VIX={vix_valor:.2f}"
+    )
+
+    # === Puntuación para operaciones LONG ===
+    score_long_btc = 0
+    score_long_rsi = 0
+    score_long_eth = 0
+    score_long_dxy = 0
+    log_long: list[str] = []
+
+    if not btc_w.empty:
+        ema20 = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1]
+        ema50 = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1]
+        hl = len(btc_w) >= 2 and btc_w["Low"].iloc[-1] > btc_w["Low"].iloc[-2]
+        if hl and ema20 > ema50:
+            score_long_btc = 25
+        log_long.append(
+            f"BTC semanal HL {hl} | EMA20 {ema20:.2f} > EMA50 {ema50:.2f} - Score: {score_long_btc}/25"
+        )
+
+        rsi_w = ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
+        vol_up = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] > btc_w["Volume"].iloc[-2]
+        if rsi_w > 50 and vol_up:
+            score_long_rsi = 25
+        log_long.append(
+            f"RSI semanal {rsi_w:.1f} | Volumen creciente {vol_up} - Score: {score_long_rsi}/25"
+        )
+    else:
+        log_long.append("BTC semanal: datos insuficientes - Score: 0/25")
+        log_long.append("RSI semanal: datos insuficientes - Score: 0/25")
+
+    if not eth_d.empty:
+        vol_up_eth = len(eth_d) >= 2 and eth_d["Volume"].iloc[-1] > eth_d["Volume"].iloc[-2]
+        alcista_eth = eth_ema20_d > eth_ema50_d
+        if alcista_eth and eth_rsi_d > 50 and vol_up_eth:
+            score_long_eth = 25
+        log_long.append(
+            f"ETH EMA20 {eth_ema20_d:.2f} > EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} | Volumen up {vol_up_eth} - Score: {score_long_eth}/25"
+        )
+    else:
+        log_long.append("ETH diario sin datos - Score: 0/25")
+
+    dxy_bajista = not _tendencia_alcista(dxy_close_d)
+    if dxy_bajista and vix_valor < 20:
+        score_long_dxy = 25
+    log_long.append(
+        f"DXY bajista {dxy_bajista} | VIX {vix_valor:.2f} - Score: {score_long_dxy}/25"
+    )
+
+    score_long = score_long_btc + score_long_rsi + score_long_eth + score_long_dxy
+    log_long.append(f"Score parcial BTC: {score_long_btc}/25")
+    log_long.append(f"Score parcial RSI/Vol: {score_long_rsi}/25")
+    log_long.append(f"Score parcial ETH: {score_long_eth}/25")
+    log_long.append(f"Score parcial DXY-VIX: {score_long_dxy}/25")
+
+    # === Puntuación para operaciones SHORT ===
+    score_short_btc = 0
+    score_short_rsi = 0
+    score_short_eth = 0
+    score_short_dxy = 0
+    log_short: list[str] = []
+
+    if not btc_w.empty:
+        ema20 = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1]
+        ema50 = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1]
+        lh = len(btc_w) >= 2 and btc_w["High"].iloc[-1] < btc_w["High"].iloc[-2]
+        if lh and ema20 < ema50:
+            score_short_btc = 25
+        log_short.append(
+            f"BTC semanal LH {lh} | EMA20 {ema20:.2f} < EMA50 {ema50:.2f} - Score: {score_short_btc}/25"
+        )
+
+        rsi_w = ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
+        vol_sell = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] >= btc_w["Volume"].iloc[-2]
+        if rsi_w < 50 and vol_sell:
+            score_short_rsi = 25
+        log_short.append(
+            f"RSI semanal {rsi_w:.1f} | Volumen venta {vol_sell} - Score: {score_short_rsi}/25"
+        )
+    else:
+        log_short.append("BTC semanal: datos insuficientes - Score: 0/25")
+        log_short.append("RSI semanal: datos insuficientes - Score: 0/25")
+
+    if not eth_d.empty:
+        vol_sell_eth = len(eth_d) >= 2 and eth_d["Volume"].iloc[-1] >= eth_d["Volume"].iloc[-2]
+        bajista_eth = eth_ema20_d < eth_ema50_d
+        if bajista_eth and eth_rsi_d < 50 and vol_sell_eth:
+            score_short_eth = 25
+        log_short.append(
+            f"ETH EMA20 {eth_ema20_d:.2f} < EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} | Vol venta {vol_sell_eth} - Score: {score_short_eth}/25"
+        )
+    else:
+        log_short.append("ETH diario sin datos - Score: 0/25")
+
+    dxy_alza = _tendencia_alcista(dxy_close_d)
+    if dxy_alza and vix_valor > 20:
+        score_short_dxy = 25
+    log_short.append(
+        f"DXY alcista {dxy_alza} | VIX {vix_valor:.2f} - Score: {score_short_dxy}/25"
+    )
+
+    score_short = score_short_btc + score_short_rsi + score_short_eth + score_short_dxy
+    log_short.append(f"Score parcial BTC: {score_short_btc}/25")
+    log_short.append(f"Score parcial RSI/Vol: {score_short_rsi}/25")
+    log_short.append(f"Score parcial ETH: {score_short_eth}/25")
+    log_short.append(f"Score parcial DXY-VIX: {score_short_dxy}/25")
+
+    apto_long = score_long >= SCORE_THRESHOLD_LONG
+    apto_short = score_short >= SCORE_THRESHOLD_SHORT
+
+    resumen_long = "\n".join("  " + linea for linea in log_long)
+    logging.info(
+        "[LONG CONTEXT]\n" + resumen_long +
+        f"\n  Score global LONG: {score_long:.0f}/100 "
+        f"{'→ Apto para operar en largo' if apto_long else '→ No apto para operar en largo'}"
+    )
+
+    resumen_short = "\n".join("  " + linea for linea in log_short)
+    logging.info(
+        "[SHORT CONTEXT]\n" + resumen_short +
+        f"\n  Score global SHORT: {score_short:.0f}/100 "
+        f"{'→ Apto para operar en corto' if apto_short else '→ No apto para operar en corto'}"
+    )
+
+    mercado_favorable = apto_long or apto_short
+    if not mercado_favorable:
+        logging.info("Mercado desfavorable -> análisis detenido")
+
+    registrar_contexto_csv(
+        {
             "fecha": datetime.utcnow().isoformat(timespec="seconds"),
             "score_long": f"{score_long:.1f}",
             "score_short": f"{score_short:.1f}",
@@ -129,14 +269,3 @@ def obtener_contexto_mercado() -> ContextoMercado:
         apto_long=apto_long,
         apto_short=apto_short,
     )
-
-
-def _tendencia_alcista(close: pd.Series) -> bool:
-    """Evalúa tendencia alcista usando EMAs de 50 y 200 periodos."""
-
-    if len(close) < 200:
-        return False
-
-    ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator().iloc[-1]
-    ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator().iloc[-1]
-    return ema50 > ema200
