@@ -57,6 +57,49 @@ def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.Dat
     return pd.DataFrame()
 
 
+def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
+    """Valida si una serie está en tendencia alcista usando EMAs.
+
+    Se asegura que ``close`` sea una :class:`~pandas.Series` y que exista
+    un historial suficiente (al menos 200 velas) para calcular las EMAs de
+    50 y 200 periodos.  Retorna ``True`` cuando la EMA50 se encuentra por
+    encima de la EMA200 y el precio de cierre está sobre la EMA50.
+    """
+
+    if isinstance(close, pd.DataFrame):
+        close = close.squeeze()
+
+    if not isinstance(close, pd.Series) or len(close) < 200:
+        return False
+
+    ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator().iloc[-1]
+    ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator().iloc[-1]
+    return ema50 > ema200 and close.iloc[-1] > ema50
+
+
+def calcular_score_contexto(
+    btc_alcista: bool, eth_alcista: bool, dxy_alcista: bool, vix_valor: float
+) -> float:
+    """Asigna un puntaje de 0 a 100 al contexto macro.
+
+    Los puntajes se distribuyen de la siguiente manera:
+
+    - 40 puntos si BTC está en tendencia alcista.
+    - 30 puntos si ETH está en tendencia alcista.
+    - 20 puntos si el DXY está bajista.
+    - 10 puntos adicionales si el VIX es menor a 20, o 5 si está entre 20 y 25.
+    """
+
+    score = 0.0
+    score += 40 if btc_alcista else 0.0
+    score += 30 if eth_alcista else 0.0
+    score += 20 if not dxy_alcista else 0.0
+    if vix_valor < 20:
+        score += 10
+    elif vix_valor < 25:
+        score += 5
+    return score
+
 def obtener_contexto_mercado() -> ContextoMercado:
     btc_d = _descargar_datos("BTC-USD", "1d")
     btc_w = _descargar_datos("BTC-USD", "1wk")
