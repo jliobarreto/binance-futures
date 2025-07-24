@@ -139,10 +139,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
     _log_df_info("ETH-USD 1d", eth_d)
     eth_w = _descargar_seguro("ETH-USD", "1wk")
     _log_df_info("ETH-USD 1wk", eth_w)
-+51
--29
 
-def obtener_contexto_mercado() -> ContextoMercado:
     dxy_d = _descargar_seguro("^DXY", "1d")
     _log_df_info("^DXY 1d", dxy_d)
     if dxy_d.empty:
@@ -168,94 +165,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
         logging.error("Datos diarios de VIX no disponibles")
 
     btc_close_d = (
-        btc_d["Close"].astype(float).squeeze()
-        if "Close" in btc_d
-        else pd.Series(dtype=float)
-    )
-    btc_close_d_last = (
-        btc_close_d.iloc[-1].item() if not btc_close_d.empty else 0.0
-    )
-    logging.debug(f"BTC close 1d último valor: {btc_close_d_last}")
-
-    btc_close_w = (
-        btc_w["Close"].astype(float).squeeze()
-        if "Close" in btc_w
-        else pd.Series(dtype=float)
-    )
-    btc_close_w_last = (
-        btc_close_w.iloc[-1].item() if not btc_close_w.empty else 0.0
-    )
-    logging.debug(f"BTC close 1w último valor: {btc_close_w_last}")
-
-    eth_close_d = (
-        eth_d["Close"].astype(float).squeeze()
-        if "Close" in eth_d
-        else pd.Series(dtype=float)
-    )
-    eth_close_d_last = (
-        eth_close_d.iloc[-1].item() if not eth_close_d.empty else 0.0
-    )
-    logging.debug(f"ETH close 1d último valor: {eth_close_d_last}")
-
-    eth_close_w = (
-        eth_w["Close"].astype(float).squeeze()
-        if "Close" in eth_w
-        else pd.Series(dtype=float)
-    )
-    eth_close_w_last = (
-        eth_close_w.iloc[-1].item() if not eth_close_w.empty else 0.0
-    )
-    logging.debug(f"ETH close 1w último valor: {eth_close_w_last}")
-
-    dxy_close_d = (
-        dxy_d["Close"].astype(float).squeeze()
-        if "Close" in dxy_d
-        else pd.Series(dtype=float)
-    )
-    dxy_close_d_last = (
-        dxy_close_d.iloc[-1].item() if not dxy_close_d.empty else 0.0
-    )
-    logging.debug(f"DXY close 1d último valor: {dxy_close_d_last}")
-
-    vix_close = (
-        vix_d["Close"].astype(float).squeeze()
-        if "Close" in vix_d
-        else pd.Series(dtype=float)
-    )
-    vix_close_last = vix_close.iloc[-1].item() if not vix_close.empty else 0.0
-    logging.debug(f"VIX close 1d último valor: {vix_close_last}")
-
-    btc_ema20_w = (
-        ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1].item()
-        if not btc_w.empty
-        else 0.0
-    )
-    btc_ema50_w = (
-        ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1].item()
-        if not btc_w.empty
-        else 0.0
-    )
-    btc_rsi_w = (
-        ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1].item()
-        if len(btc_close_w) >= 14
-        else 0.0
-    )
-
-    eth_ema20_d = (
-        ta.trend.EMAIndicator(eth_close_d, 20).ema_indicator().iloc[-1].item()
-        if not eth_d.empty
-        else 0.0
-    )
-    eth_ema50_d = (
-        ta.trend.EMAIndicator(eth_close_d, 50).ema_indicator().iloc[-1].item()
-        if not eth_d.empty
-        else 0.0
-    )
-    eth_rsi_d = (
-        ta.momentum.RSIIndicator(eth_close_d, 14).rsi().iloc[-1].item()
-        if len(eth_close_d) >= 14
-        else 0.0
-    )
+@@ -259,140 +256,121 @@ def obtener_contexto_mercado() -> ContextoMercado:
 
     btc_alcista = _tendencia_alcista(btc_close_d) and _tendencia_alcista(btc_close_w)
     eth_alcista = _tendencia_alcista(eth_close_d) and _tendencia_alcista(eth_close_w)
@@ -281,27 +191,17 @@ def obtener_contexto_mercado() -> ContextoMercado:
     log_long: list[str] = []
 
     if not btc_w.empty:
-        ema20 = (
-            ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1].item()
-        )
-        ema50 = (
-            ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1].item()
-        )
         hl = len(btc_w) >= 2 and btc_w["Low"].iloc[-1] > btc_w["Low"].iloc[-2]
-        if hl and ema20 > ema50:
+        if hl and btc_ema20_w > btc_ema50_w:
             score_long_btc = 25
         log_long.append(
             (
-                f"BTC semanal HL {hl} | EMA20 {ema20:.2f} > EMA50 {ema50:.2f} - "
+                f"BTC semanal HL {hl} | EMA20 {btc_ema20_w:.2f} > EMA50 {btc_ema50_w:.2f} - "
                 f"Score: {score_long_btc}/25"
             )
         )
 
-        rsi_w = (
-            ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1].item()
-            if len(btc_close_w) >= 14
-            else 0.0
-        )
+        rsi_w = btc_rsi_w
         vol_up = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] > btc_w["Volume"].iloc[-2]
         if rsi_w > 50 and vol_up:
             score_long_rsi = 25
@@ -324,7 +224,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
             (
                 f"ETH EMA20 {eth_ema20_d:.2f} > EMA50 {eth_ema50_d:.2f} | RSI {eth_rsi_d:.1f} "
                 f"| Volumen up {vol_up_eth} - Score: {score_long_eth}/25"
-def obtener_contexto_mercado() -> ContextoMercado:
+            )
+        )
 
     dxy_bajista = not _tendencia_alcista(dxy_close_d)
     if dxy_bajista and vix_valor < 20:
@@ -350,27 +251,17 @@ def obtener_contexto_mercado() -> ContextoMercado:
     log_short: list[str] = []
 
     if not btc_w.empty:
-        ema20 = (
-            ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1].item()
-        )
-        ema50 = (
-            ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1].item()
-        )
         lh = len(btc_w) >= 2 and btc_w["High"].iloc[-1] < btc_w["High"].iloc[-2]
-        if lh and ema20 < ema50:
+        if lh and btc_ema20_w < btc_ema50_w:
             score_short_btc = 25
         log_short.append(
             (
-                f"BTC semanal LH {lh} | EMA20 {ema20:.2f} < EMA50 {ema50:.2f} - "
+                f"BTC semanal LH {lh} | EMA20 {btc_ema20_w:.2f} < EMA50 {btc_ema50_w:.2f} - "
                 f"Score: {score_short_btc}/25"
             )
         )
 
-        rsi_w = (
-            ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1].item()
-            if len(btc_close_w) >= 14
-            else 0.0
-        )
+        rsi_w = btc_rsi_w
         vol_sell = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] >= btc_w["Volume"].iloc[-2]
         if rsi_w < 50 and vol_sell:
             score_short_rsi = 25
