@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+import csv
 
 
 def guardar_json(data: Any, path: str | Path) -> None:
@@ -25,5 +26,6 @@ def append_csv(fila: list[str], path: str | Path) -> None:
     """Agrega una fila a un CSV, creando el archivo si no existe."""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     modo = "a" if Path(path).exists() else "w"
-    with open(path, modo, encoding="utf-8") as f:
-        f.write(",".join(fila) + "\n")
+    with open(path, modo, encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(fila)
