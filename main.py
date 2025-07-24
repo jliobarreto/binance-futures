@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import os
 from config import (
     LIMITE_ANALISIS,
     BINANCE_API_KEY,
@@ -11,17 +12,10 @@ from config import (
     SCORE_THRESHOLD_LONG,
     SCORE_THRESHOLD_SHORT,
 )
-from utils.path import LOGS_DIR
+from utils.logger import setup_logging
 
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
-RUNTIME_LOG_FILE = LOGS_DIR / "runtime.log"
-logging.basicConfig(
-    filename=str(RUNTIME_LOG_FILE),
-    level=logging.DEBUG,
-    format="%(asctime)s %(levelname)s: %(message)s",
-    encoding="utf-8",
-    force=True,
-)
+MODE = os.getenv("APP_MODE", "production")
+setup_logging(MODE)
 
 from data.symbols import obtener_pares_usdt
 from logic.analyzer import analizar_simbolo
