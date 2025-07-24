@@ -165,13 +165,59 @@ def obtener_contexto_mercado() -> ContextoMercado:
         logging.error("Datos diarios de VIX no disponibles")
 
     btc_close_d = (
-    def obtener_contexto_mercado() -> ContextoMercado:
+        btc_d["Close"].astype(float).squeeze() if "Close" in btc_d else pd.Series(dtype=float)
+    )
+    logging.debug(
+        f"BTC close 1d último valor: {btc_close_d.iloc[-1] if not btc_close_d.empty else 'N/A'}"
+    )
+    btc_close_w = (
+        btc_w["Close"].astype(float).squeeze() if "Close" in btc_w else pd.Series(dtype=float)
+    )
+    logging.debug(
+        f"BTC close 1w último valor: {btc_close_w.iloc[-1] if not btc_close_w.empty else 'N/A'}"
+    )
+    eth_close_d = (
+        eth_d["Close"].astype(float).squeeze() if "Close" in eth_d else pd.Series(dtype=float)
+    )
+    logging.debug(
+        f"ETH close 1d último valor: {eth_close_d.iloc[-1] if not eth_close_d.empty else 'N/A'}"
+    )
+    eth_close_w = (
+        eth_w["Close"].astype(float).squeeze() if "Close" in eth_w else pd.Series(dtype=float)
+    )
+    logging.debug(
+        f"ETH close 1w último valor: {eth_close_w.iloc[-1] if not eth_close_w.empty else 'N/A'}"
+    )
+    dxy_close_d = (
+        dxy_d["Close"].astype(float).squeeze() if "Close" in dxy_d else pd.Series(dtype=float)
+    )
+    logging.debug(
+        f"DXY close 1d último valor: {dxy_close_d.iloc[-1] if not dxy_close_d.empty else 'N/A'}"
+    )
+    vix_close = (
+        vix_d["Close"].astype(float).squeeze() if "Close" in vix_d else pd.Series(dtype=float)
+    )
+    logging.debug(
+        f"VIX close 1d último valor: {vix_close.iloc[-1] if not vix_close.empty else 'N/A'}"
+    )
+
+    btc_ema20_w = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1] if not btc_w.empty else 0.0
+    btc_ema50_w = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1] if not btc_w.empty else 0.0
+    btc_rsi_w = (
+        ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
+    )
+
+    eth_ema20_d = ta.trend.EMAIndicator(eth_close_d, 20).ema_indicator().iloc[-1] if not eth_d.empty else 0.0
+    eth_ema50_d = ta.trend.EMAIndicator(eth_close_d, 50).ema_indicator().iloc[-1] if not eth_d.empty else 0.0
+    eth_rsi_d = (
+        ta.momentum.RSIIndicator(eth_close_d, 14).rsi().iloc[-1] if len(eth_close_d) >= 14 else 0.0
+    )
 
     btc_alcista = _tendencia_alcista(btc_close_d) and _tendencia_alcista(btc_close_w)
     eth_alcista = _tendencia_alcista(eth_close_d) and _tendencia_alcista(eth_close_w)
     dxy_alcista = _tendencia_alcista(dxy_close_d)
     vix_valor = vix_close.iloc[-1].item() if not vix_close.empty else 0.0
-    
+
 
     logging.debug(
         f"Tendencias: BTC_alcista={btc_alcista}, ETH_alcista={eth_alcista}, "
@@ -228,15 +274,20 @@ def obtener_contexto_mercado() -> ContextoMercado:
             )
         )
 
-    dxy_bajista = not _tendencia_alcista(dxy_close_d)
-    if dxy_bajista and vix_valor < 20:
-        score_long_dxy = 25
-    log_long.append(
-        (
-            f"DXY bajista {dxy_bajista} | VIX {vix_valor:.2f} - "
-            f"Score: {score_long_dxy}/25"
+    if dxy_close_d.empty:
+        logging.warning("DXY sin datos")
+        dxy_bajista = False
+        log_long.append("DXY sin datos - Score: 0/25")
+    else:
+        dxy_bajista = not _tendencia_alcista(dxy_close_d)
+        if dxy_bajista and vix_valor < 20:
+            score_long_dxy = 25
+        log_long.append(
+            (
+                f"DXY bajista {dxy_bajista} | VIX {vix_valor:.2f} - "
+                f"Score: {score_long_dxy}/25"
+            )
         )
-    )
 
     score_long = score_long_btc + score_long_rsi + score_long_eth + score_long_dxy
     log_long.append(f"Score parcial BTC: {score_long_btc}/25")
@@ -290,15 +341,20 @@ def obtener_contexto_mercado() -> ContextoMercado:
     else:
         log_short.append("ETH diario sin datos - Score: 0/25")
 
-    dxy_alza = _tendencia_alcista(dxy_close_d)
-    if dxy_alza and vix_valor > 20:
-        score_short_dxy = 25
-    log_short.append(
-        (
-            f"DXY alcista {dxy_alza} | VIX {vix_valor:.2f} - "
-            f"Score: {score_short_dxy}/25"
+    if dxy_close_d.empty:
+        logging.warning("DXY sin datos")
+        dxy_alza = False
+        log_short.append("DXY sin datos - Score: 0/25")
+    else:
+        dxy_alza = _tendencia_alcista(dxy_close_d)
+        if dxy_alza and vix_valor > 20:
+            score_short_dxy = 25
+        log_short.append(
+            (
+                f"DXY alcista {dxy_alza} | VIX {vix_valor:.2f} - "
+                f"Score: {score_short_dxy}/25"
+            )
         )
-    )
 
     score_short = score_short_btc + score_short_rsi + score_short_eth + score_short_dxy
     log_short.append(f"Score parcial BTC: {score_short_btc}/25")
