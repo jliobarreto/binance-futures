@@ -13,7 +13,6 @@ from datetime import datetime
 import pandas as pd
 import ta
 import yfinance as yf
-import time
 from logic.reporter import registrar_contexto_csv
 try:  # Permite ejecutar este módulo directamente desde la carpeta logic
     from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
@@ -38,38 +37,70 @@ class ContextoMercado:
     apto_long: bool = False
     apto_short: bool = False
 
-
 def _descargar_datos(ticker: str, interval: str, period: str = "400d") -> pd.DataFrame:
-    """Descarga precios históricos usando :mod:`yfinance` con reintentos."""
-    for _ in range(3):
-        try:
-            df = yf.download(
-                ticker,
-                interval=interval,
-                period=period,
-                progress=False,
-                auto_adjust=False,
-            )
-            return df
-        except Exception as exc:  # pragma: no cover - dependencias externas
-            logging.warning(f"No se pudieron obtener datos para {ticker} {interval}: {exc}")
-            time.sleep(1)
-    return pd.DataFrame()
+    """Descarga precios históricos usando :mod:`yfinance`.
+
+    Parameters
+    ----------
+    ticker: str
+        Símbolo a descargar (por ejemplo ``"BTC-USD"``).
+    interval: str
+        Intervalo de las velas (``"1d"``, ``"1wk"``...).
+    period: str, default ``"400d"``
+        Rango de datos a obtener.
+    """
+
+    df = yf.download(
+        ticker,
+        interval=interval,
+        period=period,
+        progress=False,
+        auto_adjust=False,
+    )
+    if df.empty:
+        return pd.DataFrame()
+    return df
+
+
+def _descargar_seguro(ticker: str, interval: str, period: str = "400d") -> pd.DataFrame:
+    """Descarga datos gestionando cualquier excepción.
+
+    En caso de error, registra el problema y devuelve un :class:`DataFrame`
+    vacío para mantener la ejecución del sistema sin interrupciones.
+    """
+
+    try:
+        return _descargar_datos(ticker, interval, period)
+    except Exception as exc:  # pragma: no cover - dependencias externas
+        logging.error(f"Error descargando {ticker} {interval}: {exc}")
+        return pd.DataFrame()
+
+
+def _log_df_info(nombre: str, df: pd.DataFrame) -> None:
+    """Registra información resumida del :class:`DataFrame` recibido."""
+
+    if df.empty:
+        logging.debug(f"{nombre}: dataframe vacío")
+        return
+
+    inicio = df.index[0]
+    fin = df.index[-1]
+    logging.debug(f"{nombre}: {len(df)} filas desde {inicio} hasta {fin}")
 
 
 def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
     """Valida si una serie está en tendencia alcista usando EMAs.
 
-    Se asegura que ``close`` sea una :class:`~pandas.Series` y que exista
-    un historial suficiente (al menos 200 velas) para calcular las EMAs de
-    50 y 200 periodos.  Retorna ``True`` cuando la EMA50 se encuentra por
-    encima de la EMA200 y el precio de cierre está sobre la EMA50.
+    Se asegura que ``close`` sea una :class:`pandas.Series` antes de
+    calcular los indicadores técnicos para evitar errores de dimensiones.
     """
 
     if isinstance(close, pd.DataFrame):
         close = close.squeeze()
 
-    if not isinstance(close, pd.Series) or len(close) < 200:
+    assert isinstance(close, pd.Series), "close debe ser una Serie 1D"
+
+    if close.empty or len(close) < 200:
         return False
 
     ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator().iloc[-1]
@@ -80,36 +111,57 @@ def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
 def calcular_score_contexto(
     btc_alcista: bool, eth_alcista: bool, dxy_alcista: bool, vix_valor: float
 ) -> float:
-    """Asigna un puntaje de 0 a 100 al contexto macro.
-
-    Los puntajes se distribuyen de la siguiente manera:
-
-    - 40 puntos si BTC está en tendencia alcista.
-    - 30 puntos si ETH está en tendencia alcista.
-    - 20 puntos si el DXY está bajista.
-    - 10 puntos adicionales si el VIX es menor a 20, o 5 si está entre 20 y 25.
-    """
-
+    """Asigna un puntaje de 0 a 100 al contexto macro."""
     score = 0.0
-    score += 40 if btc_alcista else 0.0
-    score += 30 if eth_alcista else 0.0
-    score += 20 if not dxy_alcista else 0.0
+    score += 40 if btc_alcista else 0
+    score += 30 if eth_alcista else 0
+    score += 20 if not dxy_alcista else 0
     if vix_valor < 20:
         score += 10
     elif vix_valor < 25:
         score += 5
     return score
 
-def obtener_contexto_mercado() -> ContextoMercado:
-    btc_d = _descargar_datos("BTC-USD", "1d")
-    btc_w = _descargar_datos("BTC-USD", "1wk")
-    eth_d = _descargar_datos("ETH-USD", "1d")
-    eth_w = _descargar_datos("ETH-USD", "1wk")
-    dxy_d = _descargar_datos("DX-Y.NYB", "1d")
-    vix_d = _descargar_datos("^VIX", "1d")
 
-    if btc_d.empty or btc_w.empty or eth_d.empty or eth_w.empty or dxy_d.empty or vix_d.empty:
-        logging.error("Fallo la descarga de datos de mercado. Contexto incompleto")
+def obtener_contexto_mercado() -> ContextoMercado:
+    """Obtiene el contexto general del mercado.
+
+    Descarga precios de BTC, ETH, DXY y VIX para calcular distintas
+    señales de tendencia y volatilidad.  Con esta información se
+    asignan dos puntajes (``score_long`` y ``score_short``) que indican la
+    conveniencia de operar en cada dirección.
+    """
+    btc_d = _descargar_seguro("BTC-USD", "1d")
+    _log_df_info("BTC-USD 1d", btc_d)
+    btc_w = _descargar_seguro("BTC-USD", "1wk")
+    _log_df_info("BTC-USD 1wk", btc_w)
+    eth_d = _descargar_seguro("ETH-USD", "1d")
+    _log_df_info("ETH-USD 1d", eth_d)
+    eth_w = _descargar_seguro("ETH-USD", "1wk")
+    _log_df_info("ETH-USD 1wk", eth_w)
+    dxy_d = _descargar_seguro("^DXY", "1d")
+    _log_df_info("^DXY 1d", dxy_d)
+    if dxy_d.empty:
+        logging.error("Datos diarios de ^DXY no disponibles. Probando DX-Y.NYB")
+        dxy_d = _descargar_seguro("DX-Y.NYB", "1d")
+        if dxy_d.empty:
+            logging.error("Datos diarios de DX-Y.NYB no disponibles")
+    _log_df_info("DXY corregido 1d", dxy_d)
+    vix_d = _descargar_seguro("^VIX", "1d", "100d")
+    _log_df_info("VIX 1d", vix_d)
+
+    if btc_d.empty:
+        logging.error("Datos diarios de BTC-USD no disponibles")
+    if btc_w.empty:
+        logging.error("Datos semanales de BTC-USD no disponibles")
+    if eth_d.empty:
+        logging.error("Datos diarios de ETH-USD no disponibles")
+    if eth_w.empty:
+        logging.error("Datos semanales de ETH-USD no disponibles")
+    if dxy_d.empty:
+        logging.error("Datos diarios de DXY no disponibles")
+    if vix_d.empty:
+        logging.error("Datos diarios de VIX no disponibles")
 
     btc_close_d = (
         btc_d["Close"].astype(float).squeeze() if "Close" in btc_d else pd.Series(dtype=float)
@@ -344,6 +396,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
         f"\n  Score global SHORT: {score_short:.0f}/100 "
         f"{'→ Apto para operar en corto' if apto_short else '→ No apto para operar en corto'}"
     )
+
     mercado_favorable = apto_long or apto_short
     if not mercado_favorable:
         logging.info("Mercado desfavorable -> análisis detenido")
@@ -375,5 +428,3 @@ def obtener_contexto_mercado() -> ContextoMercado:
         apto_long=apto_long,
         apto_short=apto_short,
     )
-    )
-    
