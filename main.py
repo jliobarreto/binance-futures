@@ -39,7 +39,11 @@ async def analizar_todo():
     )
     enviar_telegram(mensaje_tendencia)
     logging.info("Contexto de mercado obtenido")
-    logging.info(f"Score total de contexto: {contexto.score_total}/100")
+    logging.info(
+        f"Score total: {contexto.score_total:.0f}/100 | "
+        f"LONG {contexto.score_long:.0f}/100 | "
+        f"SHORT {contexto.score_short:.0f}/100"
+    )
     if not contexto.apto_long and not contexto.apto_short:
         logging.info("Mercado desfavorable, análisis detenido")
         enviar_telegram("⚠️ Mercado desfavorable. Trading detenido.")
