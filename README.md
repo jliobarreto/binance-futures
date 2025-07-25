@@ -1,228 +1,129 @@
-# Binance Futures Institutional Bot
+# `binance-futures`
 
-Este proyecto es un sistema de análisis y ejecución automatizada de operaciones en Binance Futures, con enfoque institucional y diseñado para estrategias de **mediano y largo plazo** (desde días hasta varios meses por operación). Está orientado a **maximizar la rentabilidad con base en datos reales del mercado**, manteniendo una gestión de riesgo estricta y reinvirtiendo de forma compuesta los beneficios generados.
+**Sistema institucional de análisis técnico y contextual para operaciones en Binance Futures (LONG/SHORT) en temporalidades medias y largas.**
 
-La arquitectura del sistema es modular, escalable, y separa claramente la lógica de análisis, evaluación, ejecución, gestión de riesgo y seguimiento de resultados.
-
----
-
-## Objetivo general
-
-Construir un bot institucional de trading para Binance Futures que:
-
-1. Analice de forma autónoma la salud del mercado global (BTC, ETH, SPY, DXY, VIX).
-2. Detecte estructuras de consolidación y rupturas válidas con volumen real.
-3. Ejecute operaciones **long o short** únicamente cuando se cumplan condiciones estrictas.
-4. Asigne una puntuación objetiva a cada activo antes de operar (sistema de score institucional).
-5. Mantenga control de riesgo y drawdown con reglas automáticas.
-6. Notifique en tiempo real las oportunidades por Telegram con botones interactivos.
-7. Registre de forma estructurada cada operación y proyecte crecimiento de capital con interés compuesto.
+Este proyecto está diseñado para analizar el estado del mercado cripto de forma automatizada, detectar oportunidades de inversión de alta probabilidad y reducir el margen de error al mínimo mediante una estructura modular, asincrónica y escalable.
 
 ---
 
-## Alcance operativo
+## 🧠 Objetivo del sistema
 
-- Tipo de trading: Futures
-- Plataforma: Binance (API oficial)
-- Temporalidad: Diario y Semanal
-- Operativa: Position Trading (no intradía, no scalping)
-- Control de riesgo: dinámico, estructural, max 3% por operación
-- Reinversión: 100% mensual del capital generado
-
----
-
-## Tecnologías y dependencias
-
-- Python 3.10 o superior
-- [TA-Lib](https://mrjbq7.github.io/ta-lib/) – Indicadores técnicos
-- [pandas](https://pandas.pydata.org/) – Manipulación de series temporales
-- [numpy](https://numpy.org/) – Cálculo numérico
-- [yfinance](https://pypi.org/project/yfinance/) – Datos macro de BTC, ETH, SPY, DXY, etc.
-- [Binance API](https://binance-docs.github.io/apidocs/) – Spot y Futures
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) – Notificaciones con botones
-- [dotenv](https://pypi.org/project/python-dotenv/) – Gestión de claves y configuración segura
+* Operar en Binance Futures en **modo automático o semiautomático**
+* Análisis de **contexto institucional completo** antes de evaluar activos (BTC, ETH, DXY, VIX)
+* Ejecutar operaciones **solo si el entorno es favorable**
+* Soporte para operaciones **LONG y SHORT** diferenciadas
+* Escalabilidad hacia múltiples criptomonedas
+* Soporte para temporalidades semanales y diarias (no scalping)
 
 ---
 
-## Estructura de carpetas y archivos
+## 📁 Estructura del proyecto
 
-```bash
+```
 binance-futures/
 │
-├── main.py                       # Ejecución principal: análisis, filtro de mercado, scoring y notificación
-├── config.py                     # Variables globales del sistema (riesgo, umbrales, tokens)
-├── .env                          # Claves privadas y configuración segura (excluido del repo)
+├── main.py                         # Punto de entrada al sistema (orquestador)
+├── .env                            # Claves API, configuración sensible
 │
-├── /logic/                       # Lógica principal del sistema
-│   ├── analyzer.py               # Reglas de análisis técnico multi-frame
-│   ├── scorer.py                 # Algoritmo de puntuación institucional por activo
-│   ├── structure_validator.py    # Detección de consolidación + ruptura confirmada
-│   ├── market_filter.py          # Filtro de salud del mercado (BTC, ETH, DXY, VIX)
-│   └── risk_manager.py           # (opcional) Gestión dinámica de SL y TP
+├── logic/                          # Lógica principal del análisis
+│   ├── market_context.py           # Evalúa BTC, ETH, VIX, DXY, scores de contexto
+│   ├── analyzer.py                 # Analiza criptoactivos según contexto
+│   ├── reporter.py                 # Exporta CSV/JSON de señales y contexto
+│   └── indicators.py               # Cálculo técnico (EMA, RSI, ADX, Volumen, etc.)
 │
-├── /indicators/                  # Indicadores técnicos calculados desde TA-Lib y personalizados
-│   └── indicators.py             # RSI, ADX, MFI, OBV, Bollinger Bands, etc.
+├── output/                         # Reportes generados por sesión
+│   ├── logs/                       # runtime.log, audit.log, errores
+│   └── signals.csv                 # Señales evaluadas por día
 │
-├── /utils/                       # Funciones auxiliares reutilizables
-│   ├── telegram_utils.py         # Lógica de botones, manejo de respuestas, formateo de mensajes
-│   ├── data_loader.py            # Descarga y limpieza de datos
-│   └── file_manager.py           # Lectura y escritura de logs, Excel, seguimiento de señales
+├── utils/                          # Utilidades generales (filtros, funciones comunes)
+│   └── telegram.py                 # Notificador (con botones) para decisiones humanas
 │
-├── /data/                        # Datos locales, logs, resultados
-│   ├── logs/                     # Historial de errores y ejecuciones
-│   ├── signals/                  # Señales generadas por fecha
-│   └── capital_tracker.xlsx      # Archivo que registra evolución del capital (interés compuesto)
+├── config/                         # Parámetros del sistema
+│   └── settings.json               # Scores, umbrales, criptos a evaluar
 │
-├── /output/                      # Resultados exportados: operaciones ejecutadas, backtests, gráficas
-│
-├── /notifier/                    # Módulo de notificación a Telegram
-│   └── notifier.py               # Envía señales con botones: Cuenta 1, Cuenta 2, Rechazada
-│
-├── /assets/                      # Documentación, plantillas, imágenes de arquitectura (si aplica)
-│
-└── README.md                     # Documento principal del repositorio
+└── README.md                       # Documentación principal
 ```
 
 ---
 
-## Flujo lógico de ejecución (resumen)
+## ⚙️ ¿Qué hace el sistema actualmente?
 
-1. **`main.py`** inicia el proceso: carga símbolos, configura variables, invoca el filtro de mercado.
-2. Si el mercado es saludable:
+1. **Evalúa el contexto global**:
 
-   * Se analiza cada símbolo con `analyzer.py` y `structure_validator.py`.
-   * Se asigna puntuación mediante `scorer.py`.
-   * Si supera el umbral, se notifica vía Telegram con `notifier.py`.
-3. Antes de analizar símbolos se consulta `risk_manager.puede_operar()`. Si
-   devuelve `False`, se envía una pausa y finaliza la ejecución.
-4. Se guarda en `data/signals/` la señal generada con su score y condición estructural.
-5. El usuario aprueba la operación desde Telegram (Cuenta 1 o Cuenta 2).
-6. Se ejecuta (fase futura) y se registra el resultado en `capital_tracker.xlsx`.
+   * BTC semanal (EMA, RSI, estructura HL/LH)
+   * ETH diario (EMA y momentum)
+   * DXY y VIX (para determinar presión externa)
+   * Calcula dos scores:
 
----
+     * `market_score_long`
+     * `market_score_short`
 
-## Parámetros clave en `config.py`
+2. **Filtra y decide si el mercado es apto para operar**
 
-* `risk_per_trade`: Porcentaje del capital total a arriesgar por operación
-* `min_score_threshold`: Puntuación mínima para enviar señal
-* `rsi_threshold_btc`: RSI mínimo de BTC para considerar el mercado saludable
-* `long_signal_conditions`: Diccionario de reglas específicas para posiciones long
-* `short_signal_conditions`: Reglas específicas para short
-* `telegram_token`, `telegram_chat_id`: Claves de autenticación para el bot
-* `max_consec_losses`: máximo de pérdidas consecutivas antes de pausar
-* `btc_drop_threshold`: caída intradía de BTC que detiene el trading
-* `volume_drop_threshold`: reducción de volumen global que activa la pausa
-* `trade_history_file`: ruta del CSV con el historial de resultados. Los PnL
-  de cada operación cerrada se agregan de forma secuencial en este archivo.
+   * Solo continúa si `score >= 65` para long o short.
+
+3. **(Próximamente)** Analiza múltiples criptomonedas:
+
+   * Detecta setups técnicos con volumen, ruptura, EMAs cruzados, etc.
+
+4. **Registra el análisis completo** en logs y archivos `.csv` para auditoría.
 
 ---
 
-## Gestión de riesgo intradía
-
-`risk_manager.puede_operar()` revisa el número de pérdidas consecutivas y el
-comportamiento reciente de BTC junto con el volumen agregado del mercado.
-Cuando alguno supera los umbrales de `config.py`, el bot pausa el análisis y
-envía una notificación de Telegram.
-
-Al cerrar una operación, su PnL se registra con
-`risk_manager.registrar_resultado`, lo que actualiza el archivo indicado por
-`TRADE_HISTORY_FILE`.
-
----
-
-## Ponderación del sistema de score
-
-El puntaje final se calcula normalizando cada factor entre 0 y 100 y aplicando
-la siguiente fórmula:
-
-```
-score = 0.4 * tendencia + 0.2 * momentum + 0.2 * volumen \
-        + 0.1 * volatilidad + 0.1 * riesgo_reward
-```
-
-Donde:
-
-* **tendencia**: orden de EMAs y dirección del MACD.
-* **momentum**: nivel de RSI diario acorde al tipo de señal.
-* **volumen**: relación entre volumen actual y promedio de 30 días.
-* **volatilidad**: validación del ATR en un rango saludable.
-* **riesgo_reward**: relación entre TP y SL respecto al precio.
-
-Cada función en `scorer.py` (`calcular_trend_score`, `calcular_volume_score`,
-etc.) devuelve un valor normalizado entre 0 y 100 para su factor.
-
----
-
-## Estado actual del desarrollo
-
-| Módulo                   | Estado        | Observaciones                                                       |
-| ------------------------ | ------------- | ------------------------------------------------------------------- |
-| `main.py`                | Implementado  | Funciona como orquestador general                                   |
-| `market_filter.py`       | Listo         | Evalúa salud de BTC y ETH (RSI, MA50)                               |
-| `structure_validator.py` | En desarrollo | Requiere detección de consolidaciones y rupturas confirmadas        |
-| `scorer.py`              | Parcial       | Requiere agregar factores como volumen, estructura, salud BTC, etc. |
-| `notifier.py`            | Listo         | Envío de señal con botones interactivos a Telegram                  |
-| `tracker.py`             | Planificado   | Deberá calcular capital mensual, drawdown y curva de crecimiento    |
-
----
-
-## Siguientes pasos recomendados
-
-1. Completar `structure_validator.py` para validar estructuras macro (semanal + diario).
-2. Separar claramente la lógica de entradas **long** y **short**.
-3. Enriquecer `scorer.py` con:
-
-   * Confirmación multi-frame
-   * Volumen relativo
-   * Divergencias (RSI, OBV, MFI)
-   * Puntos estructurales (pullback, retesteo)
-4. Crear `tracker.py` para:
-
-   * Calcular la evolución mensual del capital
-   * Registrar drawdown y profit mensual
-   * Mostrar proyección del interés compuesto
-5. Integrar validación de calendario macroeconómico (opcional)
-
----
-
-## Backtesting historico
-
-El script `backtest.py` permite evaluar la estrategia con datos pasados antes de operar en vivo.
+## 🛠️ Instalación y ejecución
 
 ```bash
-python backtest.py BTCUSDT ETHUSDT
+# Clona el repositorio
+git clone https://github.com/jliobarreto/binance-futures.git
+cd binance-futures
+
+# Instala las dependencias
+pip install -r requirements.txt
+
+# Crea archivo .env
+cp .env.example .env  # y coloca tus claves
+
+# Ejecuta el bot
+python main.py
 ```
 
-Los resultados se guardan en `output/backtests/` en los archivos `trades.csv` y `summary.csv`.
+---
+
+## 📊 Logs y reportes
+
+* `runtime.log`: ejecución de cada sesión (incluye contexto y errores)
+* `audit.log`: decisiones, activos analizados y motivos de rechazo
+* `signals.csv`: señales evaluadas y su score completo (por activo)
 
 ---
 
-## Seguridad
+## ✅ Roadmap de desarrollo (fase actual)
 
-* Las claves API están en el archivo `.env`, y deben protegerse. No se suben al repositorio.
-* Las API de Binance deben tener permisos restringidos (sin retiros).
-* Se recomienda usar entorno virtual y autenticación por IP para producción.
-
----
-
-## Registro de ejecución
-
-Cada vez que se ejecuta `main.py` se genera un archivo de log en
-`logs/runtime.log`. Allí se almacenan todos los mensajes de depuración e
-información sobre cada criptomoneda procesada. Revisa este archivo para obtener
-un historial completo de la actividad del sistema.
+| Fase | Componente                                  | Estado       |
+| ---- | ------------------------------------------- | ------------ |
+| 1    | Análisis de contexto institucional          | ✅ Completo   |
+| 2    | Evaluación de BTC y ETH                     | ✅ Activo     |
+| 3    | Evaluación múltiple de criptomonedas        | 🔄 En curso  |
+| 4    | Sistema de tracking de señales históricas   | 🔜 Pendiente |
+| 5    | Generación automática de niveles de entrada | 🔜 Pendiente |
+| 6    | Integración con Telegram                    | 🔄 En curso  |
+| 7    | Validación por temporalidades mayores       | 🔜 Pendiente |
+| 8    | Filtro de volumen y liquidez mínima         | 🔜 Pendiente |
 
 ---
 
-## Documentación adicional
+## 🤖 Tecnología utilizada
 
-* Guía de despliegue en servidor (próxima versión)
-* Manual técnico de configuración (en progreso)
-* Registro histórico de señales y resultados (en tracker)
+* Python 3.11
+* `yfinance` para datos de mercado
+* `ta` para indicadores técnicos
+* `pandas`, `numpy`, `asyncio` para procesamiento asincrónico
+* `logging` avanzado
+* Telegram Bot API (próximo)
 
 ---
 
-## Contacto técnico
+## 👨‍💻 Contacto
 
-* Autor y líder del proyecto: Julio Barreto
-* Repositorio oficial: [https://github.com/jliobarreto/binance-futures](https://github.com/jliobarreto/binance-futures)
+Desarrollado por Julio Barreto
+Si deseas colaborar o sugerir mejoras, escríbeme directamente.
