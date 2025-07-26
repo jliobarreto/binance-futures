@@ -367,6 +367,11 @@ def obtener_contexto_mercado() -> ContextoMercado:
 
     apto_long = score_long >= SCORE_THRESHOLD_LONG
     apto_short = score_short >= SCORE_THRESHOLD_SHORT
+    
+    for line in log_long:
+        logging.info(line)
+    for line in log_short:
+        logging.info(line)
 
     resumen_long = "\n".join("  " + linea for linea in log_long)
     logging.info(
