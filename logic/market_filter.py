@@ -1,7 +1,12 @@
 # filters.py
 
 import pandas as pd
-from config import GRIDS_GAP_PCT, VOLUMEN_MINIMO_USDT
+from config import (
+    GRIDS_GAP_PCT,
+    VOLUMEN_MINIMO_USDT,
+    RSI_OVERBOUGHT,
+    RSI_OVERSOLD,
+)
 import numpy as np
 
 # Mejora 1: Confirmación con temporalidades mayores
@@ -12,9 +17,9 @@ import numpy as np
 
 def cumple_mejoras_tecnicas(datos_1d, datos_1w, indicadores, tipo, btc_alcista, eth_alcista):
     # 1. Confirmación multi-timeframe
-    if tipo == 'LONG' and indicadores['rsi_1w'] > 70:
+    if tipo == 'LONG' and indicadores['rsi_1w'] > RSI_OVERBOUGHT:
         return False, 'RSI semanal sobrecomprado'
-    if tipo == 'SHORT' and indicadores['rsi_1w'] < 30:
+    if tipo == 'SHORT' and indicadores['rsi_1w'] < RSI_OVERSOLD:
         return False, 'RSI semanal sobrevendido'
 
     # 2. Consolidación previa + ruptura

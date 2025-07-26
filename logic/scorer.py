@@ -1,5 +1,15 @@
 """Funciones para calcular el score institucional."""
 
+from config import (
+    ATR_MIN,
+    ATR_MAX,
+    RSI_OVERSOLD,
+    RSI_BUY_MIN,
+    RSI_BUY_MAX,
+    RSI_OVERBOUGHT,
+    RSI_WEEKLY_OVERBOUGHT,
+)
+
 
 def calcular_trend_score(tec) -> float:
     """Evalúa la tendencia combinando EMAs y dirección del MACD."""
@@ -33,17 +43,17 @@ def calcular_momentum_score(tec) -> float:
     """Asigna puntaje basado en RSI diario."""
     rsi = tec.rsi_1d
     if tec.tipo == "LONG":
-        if rsi < 30:
+        if rsi < RSI_OVERSOLD:
             return 100.0
-        if rsi < 40:
+        if rsi < RSI_BUY_MIN:
             return 80.0
-        if rsi <= 55:
+        if rsi <= RSI_BUY_MAX:
             return 60.0
         return 40.0
     else:
-        if rsi > 70:
+        if rsi > RSI_OVERBOUGHT:
             return 100.0
-        if rsi > 60:
+        if rsi > RSI_WEEKLY_OVERBOUGHT:
             return 80.0
         if rsi >= 45:
             return 60.0
@@ -52,7 +62,7 @@ def calcular_momentum_score(tec) -> float:
 
 def calcular_volatility_score(tec) -> float:
     """Valora el ATR en un rango saludable."""
-    if 0.5 <= tec.atr <= 5:
+    if ATR_MIN <= tec.atr <= ATR_MAX:
         return 100.0
     return 0.0
 

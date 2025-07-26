@@ -8,7 +8,13 @@ import logging
 from logic.scorer import calcular_score
 from logic.longterm import valida_entrada_largo_plazo
 from data.models import IndicadoresTecnicos
-from config import VOLUMEN_MINIMO_USDT, GRIDS_GAP_PCT, MIN_SCORE_ALERTA
+from config import (
+    VOLUMEN_MINIMO_USDT,
+    GRIDS_GAP_PCT,
+    MIN_SCORE_ALERTA,
+    RSI_OVERBOUGHT,
+    RSI_WEEKLY_OVERBOUGHT,
+)
 
 
 def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
@@ -34,19 +40,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     boll_lower = ta.volatility.BollingerBands(close_d).bollinger_lband().iloc[-1]
 
     tendencia_diaria = (
-        "Alcista" if ema20 > ema50 > ema200 else "Bajista" if ema20 < ema50 < ema200 else "Indefinida"
-    )
-    rango_bb_pct = (boll_upper - boll_lower) / close_d.iloc[-1]
-    consolidacion = (
-        "Consolidación activa detectada" if rango_bb_pct <= 0.05 else "Sin consolidación clara"
-    )
-    volumen_creciente = df_d[5].iloc[-3:].is_monotonic_increasing
-
-    logging.debug(
-        f"{symbol} indicadores: RSI1D={rsi_1d:.2f}, RSI1W={rsi_1w:.2f}, "
-        f"MACD1D={macd_1d:.4f}, MACD_signal1D={macd_signal_1d:.4f}, "
-        f"EMA20={ema20:.4f}, EMA50={ema50:.4f}, EMA200={ema200:.4f}, "
-        f"ATR={atr:.4f}, MFI={mfi:.2f}, OBV={obv:.2f}, ADX={adx:.2f}, "
+    def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         f"Boll_upper={boll_upper:.4f}, Boll_lower={boll_lower:.4f}"
     )
 
@@ -72,7 +66,12 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         return None
 
     tipo = "LONG"
-    if rsi_1d > 70 and rsi_1w > 60 and macd_1d < macd_signal_1d and ema20 < ema50 < ema200:
+    if (
+        rsi_1d > RSI_OVERBOUGHT
+        and rsi_1w > RSI_WEEKLY_OVERBOUGHT
+        and macd_1d < macd_signal_1d
+        and ema20 < ema50 < ema200
+    ):
         tipo = "SHORT"
 
     if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (

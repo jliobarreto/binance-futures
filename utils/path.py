@@ -12,7 +12,7 @@ CONFIG_DIR = BASE_DIR / "config"
 # === ARCHIVOS CLAVE ===
 XLSX_PATH = OUTPUT_DIR / "registro_operaciones.xlsx"
 SYMBOLS_FILE = DATA_DIR / "symbols.json"
-CONFIG_FILE = CONFIG_DIR / "settings.yaml"
+CONFIG_FILE = CONFIG_DIR / "settings.json"
 
 # Crear carpetas si no existen
 for directory in [DATA_DIR, OUTPUT_DIR, LOGS_DIR, CONFIG_DIR]:
