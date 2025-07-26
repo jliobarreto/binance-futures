@@ -5,18 +5,19 @@ import asyncio
 import logging
 import os
 from config import (
-    LIMITE_ANALISIS,
     BINANCE_API_KEY,
     BINANCE_API_SECRET,
     MIN_SCORE_ALERTA,
     SCORE_THRESHOLD_LONG,
     SCORE_THRESHOLD_SHORT,
+    TOP_ANALISIS,
 )
 from utils.logger import setup_logging
 
 MODE = os.getenv("APP_MODE", "production")
 setup_logging(MODE)
 
+from data.symbols import obtener_top_usdt
 from data.symbols import obtener_pares_usdt
 from logic.analyzer import analizar_simbolo
 from logic.reporter import (
@@ -56,8 +57,7 @@ async def analizar_todo():
     eth_alcista = contexto.eth_alcista
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-    symbols = obtener_pares_usdt(client)
-    symbols = symbols if LIMITE_ANALISIS is None else symbols[:LIMITE_ANALISIS]
+    symbols = obtener_top_usdt(client, TOP_ANALISIS)
     logging.info(f"Comenzando análisis de {len(symbols)} símbolos")
     resultados = []
     max_score = None

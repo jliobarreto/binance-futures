@@ -18,6 +18,7 @@ MIN_SCORE_ALERTA = 30             # Puntuación mínima para enviar alerta a Tel
 SCORE_THRESHOLD_LONG = 65         # Umbral mínimo para operar en largo
 SCORE_THRESHOLD_SHORT = 65        # Umbral mínimo para operar en corto
 LIMITE_ANALISIS = None             # Límite de símbolos a evaluar; None = sin límite
+TOP_ANALISIS = 30                  # Número de pares USDT a analizar según volumen
 
 # === Exclusión de pares apalancados, experimentales o inestables ===
 EXCLUDED_TERMS = (
