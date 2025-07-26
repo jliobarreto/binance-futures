@@ -72,3 +72,21 @@ def registrar_contexto_csv(datos: dict, archivo: str | Path = LOGS_DIR / "contex
     ruta = str(path.resolve())
     logging.info(f"Contexto macro registrado en {ruta}")
     return ruta
+
+def registrar_signal(data: dict, motivo: str = "", archivo: str | Path = LOGS_DIR / "signals.csv") -> str:
+    """Registra el resultado de una señal, aceptada o descartada."""
+    path = Path(archivo)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        append_csv(["fecha", "symbol", "score", "estado", "motivo"], path)
+    fila = [
+        datetime.utcnow().isoformat(timespec="seconds"),
+        data.get("symbol") or data.get("Criptomoneda"),
+        str(data.get("score") or data.get("Score", "")),
+        "descartada" if motivo else "aceptada",
+        motivo,
+    ]
+    append_csv(fila, path)
+    ruta = str(path.resolve())
+    logging.debug(f"Signal registrada en {ruta}")
+    return ruta

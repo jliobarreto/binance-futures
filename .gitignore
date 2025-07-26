@@ -5,3 +5,4 @@ __pycache__/
 .vscode/
 *.xlsx
 output/*.csv
+.pytest_cache/

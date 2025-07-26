@@ -46,10 +46,9 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
 
     es_valido, motivo_lp = valida_entrada_largo_plazo(df_d, df_w)
     if not es_valido:
-        logging.info(
-            f"{symbol} descartado por validación de largo plazo: {motivo_lp}"
-        )
-        return None
+        motivo = f"Validación largo plazo: {motivo_lp}"
+        logging.info(f"{symbol} descartado por {motivo}")
+        return None, motivo
 
     precio = close_d.iloc[-1]
     volumen_actual = df_d[5].iloc[-1]
@@ -60,10 +59,11 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     )
 
     if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
-        logging.info(
-            f"{symbol} descartado por volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
+        motivo = (
+            f"Volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
         )
-        return None
+        logging.info(f"{symbol} descartado por {motivo}")
+        return None, motivo
 
     tipo = "LONG"
     if (
@@ -77,10 +77,11 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     if (tipo == "LONG" and not (btc_alcista and eth_alcista)) or (
         tipo == "SHORT" and btc_alcista and eth_alcista
     ):
-        logging.info(
-            f"{symbol} descartado por contradicción con la tendencia global. Tipo: {tipo}, BTC alcista: {btc_alcista}, ETH alcista: {eth_alcista}"
+        motivo = (
+            f"Contradicción con tendencia global. Tipo {tipo}, BTC {btc_alcista}, ETH {eth_alcista}"
         )
-        return None
+        logging.info(f"{symbol} descartado por {motivo}")
+        return None, motivo
 
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
@@ -124,8 +125,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     tec.score = score
     if score >= MIN_SCORE_ALERTA:
         logging.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
-        return tec, score, factors
-    logging.info(
-        f"[DECISIÓN] {symbol} descartado por score insuficiente ({score} < {MIN_SCORE_ALERTA})"
-    )
-    return None
+        return tec, score, factors, None
+    motivo = f"Score {score} < {MIN_SCORE_ALERTA}"
+    logging.info(f"[DECISIÓN] {symbol} descartado por score insuficiente ({motivo})")
+    return None, motivo

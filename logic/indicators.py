@@ -1,116 +1,87 @@
-# indicators.py
 import pandas as pd
 import numpy as np
 import ta
-from binance.client import Client
-from config import BINANCE_API_KEY, BINANCE_API_SECRET
-
-def calcular_macd(close: pd.Series):
-    macd_obj = ta.trend.MACD(close)
-    return macd_obj.macd().iloc[-1], macd_obj.macd_signal().iloc[-1]
 
 
-def calcular_ema(close: pd.Series, periodo: int) -> float:
-    return ta.trend.EMAIndicator(close, window=periodo).ema_indicator().iloc[-1]
+def calcular_indicadores(df: pd.DataFrame) -> dict:
+    """Calcula indicadores clave y devuelve un resumen con score."""
+    resultado = {
+        "score": 0,
+        "detalles": {},
+        "apto": False,
+        "tipo": None,
+    }
 
+    if df is None or len(df) < 60:
+        resultado["detalles"]["data"] = "Insuficiente"
+        return resultado
 
-def calcular_atr(high: pd.Series, low: pd.Series, close: pd.Series, periodo: int = 14) -> float:
-    return ta.volatility.AverageTrueRange(high, low, close, window=periodo).average_true_range().iloc[-1]
-
-
-def calcular_adx(high: pd.Series, low: pd.Series, close: pd.Series, periodo: int = 14) -> float:
-    return ta.trend.ADXIndicator(high, low, close, window=periodo).adx().iloc[-1]
-
-
-def calcular_bollinger_bands(close: pd.Series, periodo: int = 20):
-    bb = ta.volatility.BollingerBands(close, window=periodo, window_dev=2)
-    return bb.bollinger_hband().iloc[-1], bb.bollinger_lband().iloc[-1], bb.bollinger_mavg().iloc[-1]
-
-
-def calcular_mfi(high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.Series, periodo: int = 14) -> float:
-    return ta.volume.MFIIndicator(high, low, close, volume, window=periodo).money_flow_index().iloc[-1]
-
-
-def is_bounce_confirmed(symbol: str, direction: str = "long", lookback: int = 5) -> bool:
-    """Evalúa si hubo un rebote en la EMA 200 en las últimas velas.
-
-    Un rebote se considera confirmado cuando el precio cierra de un lado de la
-    EMA200 después de haber cerrado en el lado opuesto en la vela previa. Para
-    obtener los precios se consultan las velas diarias de Binance.
-
-    Parameters
-    ----------
-    symbol : str
-        Símbolo de la criptomoneda (por ejemplo ``"BTCUSDT"``).
-    direction : str
-        ``"long"`` para rebotes alcistas, ``"short"`` para bajistas.
-    lookback : int
-        Número de velas a verificar.
-    """
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-
-    # Se solicitan suficientes velas para calcular la EMA200
-    limit = max(lookback + 205, 210)
-    klines = client.get_klines(
-        symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=limit
+    df = df.copy()
+    df["EMA20"] = ta.trend.ema_indicator(df["close"], window=20)
+    df["EMA50"] = ta.trend.ema_indicator(df["close"], window=50)
+    df["RSI"] = ta.momentum.rsi(df["close"], window=14)
+    df["VOLUMEN_PROMEDIO"] = df["volume"].rolling(window=20).mean()
+    df["ATR"] = ta.volatility.average_true_range(
+        df["high"], df["low"], df["close"], window=14
     )
 
-    df = pd.DataFrame(klines).astype(float)
-    close = df[4]
+    ema20 = df["EMA20"].iloc[-1]
+    ema50 = df["EMA50"].iloc[-1]
+    rsi = df["RSI"].iloc[-1]
+    volumen = df["volume"].iloc[-1]
+    volumen_prom = df["VOLUMEN_PROMEDIO"].iloc[-1]
+    atr = df["ATR"].iloc[-1]
 
-    ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator()
+    # === 1. Tendencia EMA ===
+    if ema20 > ema50:
+        resultado["score"] += 20
+        resultado["detalles"]["ema"] = "EMA20 > EMA50 (alcista)"
+        resultado["tipo"] = "long"
+    elif ema20 < ema50:
+        resultado["score"] += 20
+        resultado["detalles"]["ema"] = "EMA20 < EMA50 (bajista)"
+        resultado["tipo"] = "short"
+    else:
+        resultado["detalles"]["ema"] = "Cruce neutral"
 
-    for i in range(-lookback + 1, 0):
-        prev_close = close.iloc[i - 1]
-        curr_close = close.iloc[i]
+    # === 2. RSI ===
+    if rsi > 55 and resultado["tipo"] == "long":
+        resultado["score"] += 20
+        resultado["detalles"]["rsi"] = f"RSI {rsi:.2f} (fuerte long)"
+    elif rsi < 45 and resultado["tipo"] == "short":
+        resultado["score"] += 20
+        resultado["detalles"]["rsi"] = f"RSI {rsi:.2f} (fuerte short)"
+    else:
+        resultado["detalles"]["rsi"] = f"RSI {rsi:.2f} (neutral)"
 
-        prev_above = prev_close > ema200.iloc[i - 1]
-        curr_above = curr_close > ema200.iloc[i]
+    # === 3. Volumen ===
+    if volumen > volumen_prom:
+        resultado["score"] += 20
+        resultado["detalles"]["volumen"] = f"Volumen creciente ({volumen:.2f})"
+    else:
+        resultado["detalles"]["volumen"] = f"Volumen bajo ({volumen:.2f})"
 
-        if direction == "long" and not prev_above and curr_above:
-            return True
-        if direction == "short" and prev_above and not curr_above:
-            return True
+    # === 4. Consolidación y ruptura ===
+    df["max20"] = df["high"].rolling(window=20).max()
+    df["min20"] = df["low"].rolling(window=20).min()
+    rango = df["max20"].iloc[-2] - df["min20"].iloc[-2]
+    breakout = df["close"].iloc[-1] > df["max20"].iloc[-2]
 
-    return False
+    if rango / df["close"].iloc[-2] < 0.05 and breakout and resultado["tipo"] == "long":
+        resultado["score"] += 25
+        resultado["detalles"]["ruptura"] = "Ruptura alcista tras consolidación"
+    elif rango / df["close"].iloc[-2] < 0.05 and df["close"].iloc[-1] < df["min20"].iloc[-2] and resultado["tipo"] == "short":
+        resultado["score"] += 25
+        resultado["detalles"]["ruptura"] = "Ruptura bajista tras consolidación"
+    else:
+        resultado["detalles"]["ruptura"] = "Sin ruptura clara"
 
+    # === 5. ATR ===
+    if atr > 0:
+        resultado["score"] += 15
+        resultado["detalles"]["atr"] = f"ATR saludable: {atr:.4f}"
+    else:
+        resultado["detalles"]["atr"] = f"ATR bajo: {atr:.4f}"
 
-def has_recent_ema_cross(symbol: str, direction: str = "long", lookback: int = 10) -> bool:
-    """Comprueba si hubo un cruce reciente de las EMAs 20 y 50.
-
-    Devuelve ``True`` si en las últimas ``lookback`` velas la EMA20 cruzó la EMA50
-    en la dirección indicada. La función está pensada como ayuda para filtrar
-    entradas cuando recién cambia la tendencia.
-
-    Parameters
-    ----------
-    symbol : str
-        Par a consultar.
-    direction : str
-        ``"long"`` valida cruces alcistas, ``"short"`` cruces bajistas.
-    lookback : int
-        Cantidad de velas evaluadas.
-    """
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-
-    limit = max(lookback + 55, 60)
-    klines = client.get_klines(
-        symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=limit
-    )
-
-    close = pd.Series([float(k[4]) for k in klines])
-    ema20 = ta.trend.EMAIndicator(close, window=20).ema_indicator()
-    ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator()
-
-    diff = ema20 - ema50
-
-    for i in range(-lookback + 1, 0):
-        prev_diff = diff.iloc[i - 1]
-        curr_diff = diff.iloc[i]
-
-        if direction == "long" and prev_diff <= 0 and curr_diff > 0:
-            return True
-        if direction == "short" and prev_diff >= 0 and curr_diff < 0:
-            return True
-
-    return False
+    resultado["apto"] = resultado["score"] >= 65
+    return resultado
