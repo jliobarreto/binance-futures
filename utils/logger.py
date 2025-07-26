@@ -24,7 +24,7 @@ def setup_logging(mode: str = "production") -> None:
     file_handler.setFormatter(formatter)
 
     error_handler = logging.FileHandler(audit_log, encoding="utf-8")
-    error_handler.setLevel(logging.ERROR)
+    error_handler.setLevel(logging.INFO)
     error_handler.setFormatter(formatter)
 
     console_handler = logging.StreamHandler()
