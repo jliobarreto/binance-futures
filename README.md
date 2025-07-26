@@ -1,129 +1,154 @@
-# `binance-futures`
+# binance-futures
 
-**Sistema institucional de análisis técnico y contextual para operaciones en Binance Futures (LONG/SHORT) en temporalidades medias y largas.**
-
-Este proyecto está diseñado para analizar el estado del mercado cripto de forma automatizada, detectar oportunidades de inversión de alta probabilidad y reducir el margen de error al mínimo mediante una estructura modular, asincrónica y escalable.
-
----
-
-## 🧠 Objetivo del sistema
-
-* Operar en Binance Futures en **modo automático o semiautomático**
-* Análisis de **contexto institucional completo** antes de evaluar activos (BTC, ETH, DXY, VIX)
-* Ejecutar operaciones **solo si el entorno es favorable**
-* Soporte para operaciones **LONG y SHORT** diferenciadas
-* Escalabilidad hacia múltiples criptomonedas
-* Soporte para temporalidades semanales y diarias (no scalping)
+**Sistema institucional de análisis técnico automatizado para operar en Binance Futures a mediano y largo plazo.**  
+Utiliza datos del mercado Spot por su mayor precisión y confiabilidad, pero ejecuta operaciones manuales en el mercado de futuros con base en señales altamente filtradas.
 
 ---
 
-## 📁 Estructura del proyecto
+## 🎯 Objetivo del proyecto
+
+- Analizar el mercado global y técnico para evaluar si operar o no (LONG / SHORT).
+- Evaluar todas las criptomonedas que operan con USDT en Binance Spot.
+- Aplicar una plantilla institucional de indicadores técnicos para validar señales.
+- Notificar señales claras y accionables vía Telegram.
+- Registrar y auditar todas las decisiones, incluso las no ejecutadas.
+
+---
+
+## 📌 Características principales
+
+- ✅ **Datos obtenidos desde el mercado Spot** (no Futures).
+- ✅ **Análisis técnico modular**: EMA, RSI, volumen, consolidación, ruptura, ATR.
+- ✅ **Escaneo completo de todos los pares USDT** con filtro de volumen.
+- ✅ **Evaluación de contexto macro (BTC, ETH, VIX, DXY)** para activar o detener análisis.
+- ✅ **Notificación vía Telegram con botones de acción** para operar manualmente.
+- ✅ **Registro en logs y archivos `.csv` de cada evaluación** para auditoría.
+- ✅ **Configuración externa vía archivo `settings.json`**.
+
+---
+
+## 🧠 Estructura del sistema
 
 ```
+
 binance-futures/
 │
-├── main.py                         # Punto de entrada al sistema (orquestador)
-├── .env                            # Claves API, configuración sensible
+├── main.py                   # Orquestador del flujo principal
+├── .env                      # Claves API y configuración sensible
 │
-├── logic/                          # Lógica principal del análisis
-│   ├── market_context.py           # Evalúa BTC, ETH, VIX, DXY, scores de contexto
-│   ├── analyzer.py                 # Analiza criptoactivos según contexto
-│   ├── reporter.py                 # Exporta CSV/JSON de señales y contexto
-│   └── indicators.py               # Cálculo técnico (EMA, RSI, ADX, Volumen, etc.)
+├── config/
+│   └── settings.json         # Parámetros como score mínimo, volumen mínimo, etc.
 │
-├── output/                         # Reportes generados por sesión
-│   ├── logs/                       # runtime.log, audit.log, errores
-│   └── signals.csv                 # Señales evaluadas por día
+├── logic/
+│   ├── market\_context.py     # Evalúa si el contexto global es apto para operar
+│   ├── analyzer.py           # Evalúa cada cripto con la plantilla técnica
+│   ├── indicators.py         # Calcula indicadores técnicos y score
+│   └── notifier.py           # Envía señales aptas vía Telegram con botones
 │
-├── utils/                          # Utilidades generales (filtros, funciones comunes)
-│   └── telegram.py                 # Notificador (con botones) para decisiones humanas
+├── output/
+│   ├── runtime.log           # Log de ejecución y errores
+│   ├── audit.log             # Registro detallado de decisiones
+│   └── signals.csv           # Señales técnicas evaluadas
 │
-├── config/                         # Parámetros del sistema
-│   └── settings.json               # Scores, umbrales, criptos a evaluar
-│
-└── README.md                       # Documentación principal
-```
+└── README.md                 # Este archivo
+
+````
 
 ---
 
-## ⚙️ ¿Qué hace el sistema actualmente?
-
-1. **Evalúa el contexto global**:
-
-   * BTC semanal (EMA, RSI, estructura HL/LH)
-   * ETH diario (EMA y momentum)
-   * DXY y VIX (para determinar presión externa)
-   * Calcula dos scores:
-
-     * `market_score_long`
-     * `market_score_short`
-
-2. **Filtra y decide si el mercado es apto para operar**
-
-   * Solo continúa si `score >= 65` para long o short.
-
-3. **(Próximamente)** Analiza múltiples criptomonedas:
-
-   * Detecta setups técnicos con volumen, ruptura, EMAs cruzados, etc.
-
-4. **Registra el análisis completo** en logs y archivos `.csv` para auditoría.
-
----
-
-## 🛠️ Instalación y ejecución
+## ⚙️ Instalación y uso
 
 ```bash
-# Clona el repositorio
+# 1. Clona el repositorio
 git clone https://github.com/jliobarreto/binance-futures.git
 cd binance-futures
 
-# Instala las dependencias
+# 2. Instala dependencias
 pip install -r requirements.txt
 
-# Crea archivo .env
-cp .env.example .env  # y coloca tus claves
+# 3. Configura el archivo .env con tus claves de Binance Spot
+cp .env.example .env
 
-# Ejecuta el bot
+# 4. Ejecuta el sistema
 python main.py
-```
+````
 
 ---
 
-## 📊 Logs y reportes
+## 🧪 Flujo de ejecución
 
-* `runtime.log`: ejecución de cada sesión (incluye contexto y errores)
-* `audit.log`: decisiones, activos analizados y motivos de rechazo
-* `signals.csv`: señales evaluadas y su score completo (por activo)
+1. **Evaluación de contexto general**
 
----
+   * BTC (1W), ETH (1D), DXY, VIX
+   * Devuelve `market_score_long` y `market_score_short`
+   * Solo continúa si alguno ≥ 65
 
-## ✅ Roadmap de desarrollo (fase actual)
+2. **Escaneo de criptos USDT desde mercado Spot**
 
-| Fase | Componente                                  | Estado       |
-| ---- | ------------------------------------------- | ------------ |
-| 1    | Análisis de contexto institucional          | ✅ Completo   |
-| 2    | Evaluación de BTC y ETH                     | ✅ Activo     |
-| 3    | Evaluación múltiple de criptomonedas        | 🔄 En curso  |
-| 4    | Sistema de tracking de señales históricas   | 🔜 Pendiente |
-| 5    | Generación automática de niveles de entrada | 🔜 Pendiente |
-| 6    | Integración con Telegram                    | 🔄 En curso  |
-| 7    | Validación por temporalidades mayores       | 🔜 Pendiente |
-| 8    | Filtro de volumen y liquidez mínima         | 🔜 Pendiente |
+   * Filtro por volumen diario (ej. mínimo \$5M)
+   * Evaluación técnica con indicadores: EMA20/50, RSI, volumen, ruptura, ATR
 
----
+3. **Clasificación de señales**
 
-## 🤖 Tecnología utilizada
+   * Score técnico 0–100
+   * Marca como `long`, `short` o `descartado`
+   * Registra en `signals.csv` y `audit.log`
 
-* Python 3.11
-* `yfinance` para datos de mercado
-* `ta` para indicadores técnicos
-* `pandas`, `numpy`, `asyncio` para procesamiento asincrónico
-* `logging` avanzado
-* Telegram Bot API (próximo)
+4. **Notificación vía Telegram**
+
+   * Mensaje por cada señal apta
+   * Botones: `✅ Cuenta 1` / `✅ Cuenta 2` / `❌ Rechazar`
+   * Guarda resultado de la decisión
 
 ---
 
-## 👨‍💻 Contacto
+## 📈 Indicadores técnicos utilizados
+
+| Indicador      | Rol                         |
+| -------------- | --------------------------- |
+| EMA20 / EMA50  | Tendencia                   |
+| RSI            | Momentum                    |
+| Volumen        | Validación de ruptura       |
+| ATR            | Confirmación de volatilidad |
+| Rango 20 velas | Consolidación previa        |
+
+---
+
+## 📤 Resultados esperados
+
+* No opera si el mercado no es apto
+* Filtra criptos sin volumen o señales falsas
+* Proporciona señales claras y ejecutables
+* Registra todo para trazabilidad y mejora futura
+
+---
+
+## 🔐 Seguridad
+
+* Las claves de API y configuración están en el archivo `.env` (no se suben al repositorio)
+* Solo se usan datos del mercado Spot (más seguros y completos)
+* No se realiza ejecución automática de órdenes
+
+---
+
+## 🧩 Roadmap de mejoras
+
+| Funcionalidad                      | Estado       |
+| ---------------------------------- | ------------ |
+| Escaneo dinámico de pares USDT     | ✅ Activo     |
+| Filtro de volumen y ATR            | ✅ Activo     |
+| Plantilla central de indicadores   | ✅ Activo     |
+| Registro histórico de señales      | ✅ Activo     |
+| Evaluación por score institucional | ✅ Activo     |
+| Notificación vía Telegram          | 🔄 En curso  |
+| Evaluación posterior de señales    | 🔜 Pendiente |
+| Análisis multi-timeframe           | 🔜 Pendiente |
+
+---
+
+## 👨‍💻 Autor
 
 Desarrollado por Julio Barreto
-Si deseas colaborar o sugerir mejoras, escríbeme directamente.
+Para consultas, colaboraciones o mejora del proyecto, contáctame directamente.
+
+---
