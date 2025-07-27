@@ -18,7 +18,7 @@ from logic.reporter import (
     registrar_signal,
 )
 from logic.risk_manager import puede_operar
-from utils.telegram_utils import enviar_telegram, formatear_senal
+from utils.telegram_ import enviar_telegram, formatear_senal
 
 
 async def run_bot() -> None:
