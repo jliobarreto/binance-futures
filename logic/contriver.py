@@ -71,7 +71,7 @@ async def run_bot() -> None:
                 sym, klines_d, klines_w, contexto.btc_alcista, contexto.eth_alcista
             )
             logging.info(f"Análisis de {sym} completado")
-            if resultado and resultado[0] is not None:
+            if resultado:
                 tec, score, _factors, _ = resultado
                 if tec.tipo == "LONG" and not contexto.apto_long:
                     motivo = (
@@ -108,8 +108,7 @@ async def run_bot() -> None:
                 mensaje_senal = formatear_senal(resultado_dict)
                 enviar_telegram(mensaje_senal)
             else:
-                motivo = resultado[1] if resultado else "Sin datos"
-                registrar_signal({"symbol": sym}, motivo)
+                registrar_signal({"symbol": sym}, "Sin datos")
         except Exception as e:
             logging.error(f"Error analizando {sym}: {e}")
             registrar_signal({"symbol": sym}, f"error: {e}")

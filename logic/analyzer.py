@@ -39,16 +39,29 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     boll_upper = ta.volatility.BollingerBands(close_d).bollinger_hband().iloc[-1]
     boll_lower = ta.volatility.BollingerBands(close_d).bollinger_lband().iloc[-1]
 
-    tendencia_diaria = (
-    def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
-        f"Boll_upper={boll_upper:.4f}, Boll_lower={boll_lower:.4f}"
+    # Tendencia diaria simple basada en EMAs
+    if ema20 > ema50 > ema200:
+        tendencia_diaria = "Alcista"
+    elif ema20 < ema50 < ema200:
+        tendencia_diaria = "Bajista"
+    else:
+        tendencia_diaria = "Lateral"
+
+    # Consolidación mediante rango de las últimas 20 velas
+    rango_20 = df_d[2].rolling(20).max().iloc[-1] - df_d[3].rolling(20).min().iloc[-1]
+    consolidacion = "Consolidando" if rango_20 / close_d.iloc[-1] < 0.05 else "Sin consolidar"
+
+    # Valida si el volumen ha aumentado durante los últimos tres días
+    volumen_creciente = (
+        len(df_d[5]) >= 4
+        and df_d[5].iloc[-1] > df_d[5].iloc[-2] > df_d[5].iloc[-3]
     )
 
     es_valido, motivo_lp = valida_entrada_largo_plazo(df_d, df_w)
     if not es_valido:
         motivo = f"Validación largo plazo: {motivo_lp}"
         logging.info(f"{symbol} descartado por {motivo}")
-        return None, motivo
+        return None
 
     precio = close_d.iloc[-1]
     volumen_actual = df_d[5].iloc[-1]
@@ -63,7 +76,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
             f"Volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
         )
         logging.info(f"{symbol} descartado por {motivo}")
-        return None, motivo
+        return None
 
     tipo = "LONG"
     if (
@@ -81,7 +94,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
             f"Contradicción con tendencia global. Tipo {tipo}, BTC {btc_alcista}, ETH {eth_alcista}"
         )
         logging.info(f"{symbol} descartado por {motivo}")
-        return None, motivo
+        return None
 
     # SL con ATR
     sl = precio - 1.5 * atr if tipo == 'LONG' else precio + 1.5 * atr
@@ -128,4 +141,4 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         return tec, score, factors, None
     motivo = f"Score {score} < {MIN_SCORE_ALERTA}"
     logging.info(f"[DECISIÓN] {symbol} descartado por score insuficiente ({motivo})")
-    return None, motivo
+    return None
