@@ -63,13 +63,19 @@ binance-futures/
 git clone https://github.com/jliobarreto/binance-futures.git
 cd binance-futures
 
-# 2. Instala dependencias
-pip install -r requirements.txt
+# 2. (Opcional) crea un entorno virtual
+python -m venv venv
+source venv/bin/activate
 
-# 3. Configura el archivo .env con tus claves de Binance Spot
+# 3. Instala las dependencias
+pip install -r requirements.txt
+# Incluye módulos como: pandas, numpy, ta, python-binance, openpyxl,
+# requests, flask, scipy, python-dotenv y yfinance.
+
+# 4. Configura el archivo .env con tus claves de Binance Spot
 cp .env.example .env
 
-# 4. Ejecuta el sistema
+# 5. Ejecuta el sistema
 python main.py
 ````
 
