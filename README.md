@@ -79,6 +79,13 @@ cp .env.example .env
 python main.py
 ````
 
+## 📄 Variables de entorno
+
+Define en el archivo `.env` las siguientes claves:
+
+- `BINANCE_API_KEY` y `BINANCE_API_SECRET`: credenciales de la API de Binance.
+- `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID`: datos para enviar alertas por Telegram.
+
 ---
 
 ## 🧪 Flujo de ejecución

@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load variables from .env if present
+load_dotenv()
+
+# Read settings.json for numeric configuration
+_settings_path = Path(__file__).with_name("settings.json")
+with _settings_path.open() as f:
+    _SETTINGS = json.load(f)
+
+# API credentials from environment variables
+BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
+BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+# Export every key from settings.json as a module level constant
+VOLUMEN_MINIMO_USDT = _SETTINGS.get("VOLUMEN_MINIMO_USDT")
+GRIDS_GAP_PCT = _SETTINGS.get("GRIDS_GAP_PCT")
+MIN_SCORE_ALERTA = _SETTINGS.get("MIN_SCORE_ALERTA")
+SCORE_THRESHOLD_LONG = _SETTINGS.get("SCORE_THRESHOLD_LONG")
+SCORE_THRESHOLD_SHORT = _SETTINGS.get("SCORE_THRESHOLD_SHORT")
+LIMITE_ANALISIS = _SETTINGS.get("LIMITE_ANALISIS")
+TOP_ANALISIS = _SETTINGS.get("TOP_ANALISIS")
+ATR_MIN = _SETTINGS.get("ATR_MIN")
+ATR_MAX = _SETTINGS.get("ATR_MAX")
+RSI_BUY_MIN = _SETTINGS.get("RSI_BUY_MIN")
+RSI_BUY_MAX = _SETTINGS.get("RSI_BUY_MAX")
+RSI_OVERSOLD = _SETTINGS.get("RSI_OVERSOLD")
+RSI_OVERBOUGHT = _SETTINGS.get("RSI_OVERBOUGHT")
+RSI_WEEKLY_OVERBOUGHT = _SETTINGS.get("RSI_WEEKLY_OVERBOUGHT")
+MAX_CONSEC_LOSSES = _SETTINGS.get("MAX_CONSEC_LOSSES")
+BTC_DROP_THRESHOLD = _SETTINGS.get("BTC_DROP_THRESHOLD")
+VOLUME_DROP_THRESHOLD = _SETTINGS.get("VOLUME_DROP_THRESHOLD")
+TRADE_HISTORY_FILE = _SETTINGS.get("TRADE_HISTORY_FILE")
+
+__all__ = [
+    "BINANCE_API_KEY",
+    "BINANCE_API_SECRET",
+    "TELEGRAM_TOKEN",
+    "TELEGRAM_CHAT_ID",
+    "VOLUMEN_MINIMO_USDT",
+    "GRIDS_GAP_PCT",
+    "MIN_SCORE_ALERTA",
+    "SCORE_THRESHOLD_LONG",
+    "SCORE_THRESHOLD_SHORT",
+    "LIMITE_ANALISIS",
+    "TOP_ANALISIS",
+    "ATR_MIN",
+    "ATR_MAX",
+    "RSI_BUY_MIN",
+    "RSI_BUY_MAX",
+    "RSI_OVERSOLD",
+    "RSI_OVERBOUGHT",
+    "RSI_WEEKLY_OVERBOUGHT",
+    "MAX_CONSEC_LOSSES",
+    "BTC_DROP_THRESHOLD",
+    "VOLUME_DROP_THRESHOLD",
+    "TRADE_HISTORY_FILE",
+]
