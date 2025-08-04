@@ -202,8 +202,16 @@ def obtener_contexto_mercado() -> ContextoMercado:
         f"VIX close 1d último valor: {vix_close.iloc[-1] if not vix_close.empty else 'N/A'}"
     )
 
-    btc_ema20_w = ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1] if not btc_w.empty else 0.0
-    btc_ema50_w = ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1] if not btc_w.empty else 0.0
+        btc_ema20_w = (
+        ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1].item()
+        if not btc_w.empty
+        else 0.0
+    )
+    btc_ema50_w = (
+        ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1].item()
+        if not btc_w.empty
+        else 0.0
+    )    
     btc_rsi_w = (
         ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
     )
