@@ -47,7 +47,7 @@ async def run_bot() -> None:
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
     try:
-        symbols = obtener_top_usdt(client, TOP_ANALISIS)
+        symbols = obtener_top_usdt(client, limit=TOP_ANALISIS)
     except Exception as e:
         logging.error(f"Error obteniendo símbolos: {e}")
         enviar_telegram("⚠️ Error obteniendo símbolos de Binance")
