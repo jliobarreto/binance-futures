@@ -35,6 +35,9 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 # ---- Export every key from settings.json as module-level constants -----------
 globals().update(_SETTINGS)
 
+# Allow overriding the fallback DXY symbol through environment variables.
+DXY_ALT_SYMBOL = os.getenv("DXY_ALT_SYMBOL", _SETTINGS.get("DXY_ALT_SYMBOL", "DX-Y.NYB"))
+
 __all__ = [
     "BINANCE_API_KEY",
     "BINANCE_API_SECRET",

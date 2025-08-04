@@ -15,14 +15,13 @@ import ta
 import yfinance as yf
 from logic.reporter import registrar_contexto_csv
 try:  # Permite ejecutar este módulo directamente desde la carpeta logic
-    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
+    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT, DXY_ALT_SYMBOL
 except ModuleNotFoundError:  # pragma: no cover - ajuste para entornos fuera del paquete
     import sys
     from pathlib import Path
 
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT
-
+    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT, DXY_ALT_SYMBOL
 
 @dataclass
 class ContextoMercado:
@@ -110,13 +109,18 @@ def _tendencia_alcista(close: pd.Series | pd.DataFrame) -> bool:
 
 
 def calcular_score_contexto(
-    btc_alcista: bool, eth_alcista: bool, dxy_alcista: bool, vix_valor: float
+    btc_alcista: bool,
+    eth_alcista: bool,
+    dxy_alcista: bool,
+    vix_valor: float,
+    incluir_dxy: bool = True,
 ) -> float:
     """Asigna un puntaje de 0 a 100 al contexto macro."""
     score = 0.0
     score += 40 if btc_alcista else 0
     score += 30 if eth_alcista else 0
-    score += 20 if not dxy_alcista else 0
+    if incluir_dxy:
+        score += 20 if not dxy_alcista else 0
     if vix_valor < 20:
         score += 10
     elif vix_valor < 25:
@@ -142,12 +146,16 @@ def obtener_contexto_mercado() -> ContextoMercado:
     _log_df_info("ETH-USD 1wk", eth_w)
 
     dxy_d = _descargar_seguro("^DXY", "1d")
-    _log_df_info("^DXY 1d", dxy_d)
+    dxy_disponible = True
     if dxy_d.empty:
-        logging.error("Datos diarios de ^DXY no disponibles. Probando DX-Y.NYB")
-        dxy_d = _descargar_seguro("DX-Y.NYB", "1d")
+        logging.error(f"Datos diarios de ^DXY no disponibles. Probando {DXY_ALT_SYMBOL}")
+        dxy_d = _descargar_seguro(DXY_ALT_SYMBOL, "1d")
         if dxy_d.empty:
-            logging.error("Datos diarios de DX-Y.NYB no disponibles")
+            logging.warning(
+                f"Datos diarios de ^DXY y {DXY_ALT_SYMBOL} no disponibles. "
+                "Se omiten cálculos basados en DXY"
+            )
+            dxy_disponible = False
     _log_df_info("DXY corregido 1d", dxy_d)
     vix_d = _descargar_seguro("^VIX", "1d", "100d")
     _log_df_info("VIX 1d", vix_d)
@@ -160,8 +168,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
         logging.error("Datos diarios de ETH-USD no disponibles")
     if eth_w.empty:
         logging.error("Datos semanales de ETH-USD no disponibles")
-    if dxy_d.empty:
-        logging.error("Datos diarios de DXY no disponibles")
+     if not dxy_disponible:
+        logging.warning("Datos diarios de DXY no disponibles") 
     if vix_d.empty:
         logging.error("Datos diarios de VIX no disponibles")
 
@@ -189,12 +197,15 @@ def obtener_contexto_mercado() -> ContextoMercado:
     logging.debug(
         f"ETH close 1w último valor: {eth_close_w.iloc[-1] if not eth_close_w.empty else 'N/A'}"
     )
-    dxy_close_d = (
-        dxy_d["Close"].astype(float).squeeze() if "Close" in dxy_d else pd.Series(dtype=float)
-    )
-    logging.debug(
-        f"DXY close 1d último valor: {dxy_close_d.iloc[-1] if not dxy_close_d.empty else 'N/A'}"
-    )
+    if dxy_disponible:
+        dxy_close_d = (
+            dxy_d["Close"].astype(float).squeeze() if "Close" in dxy_d else pd.Series(dtype=float)
+        )
+        logging.debug(
+            f"DXY close 1d último valor: {dxy_close_d.iloc[-1] if not dxy_close_d.empty else 'N/A'}"
+        )
+    else:
+        dxy_close_d = pd.Series(dtype=float)
     vix_close = (
         vix_d["Close"].astype(float).squeeze() if "Close" in vix_d else pd.Series(dtype=float)
     )
@@ -202,7 +213,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
         f"VIX close 1d último valor: {vix_close.iloc[-1] if not vix_close.empty else 'N/A'}"
     )
 
-        btc_ema20_w = (
+    btc_ema20_w = (
         ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1].item()
         if not btc_w.empty
         else 0.0
@@ -233,7 +244,9 @@ def obtener_contexto_mercado() -> ContextoMercado:
         f"DXY_alcista={dxy_alcista}, VIX={vix_valor:.2f}"
     )
 
-    score_total = calcular_score_contexto(btc_alcista, eth_alcista, dxy_alcista, vix_valor)
+    score_total = calcular_score_contexto(
+        btc_alcista, eth_alcista, dxy_alcista, vix_valor, incluir_dxy=dxy_disponible
+    )
     logging.debug(
         f"Score base contexto: {score_total:.1f} | BTC={btc_alcista}, ETH={eth_alcista}, "
         f"DXY={dxy_alcista}, VIX={vix_valor:.2f}"
@@ -285,7 +298,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
     else:
         log_long.append("ETH diario sin datos - Score: 0/25")
 
-    if dxy_close_d.empty:
+    if not dxy_disponible:
         logging.warning("DXY sin datos")
         dxy_bajista = False
         log_long.append("DXY sin datos - Score: 0/25")
@@ -352,7 +365,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
     else:
         log_short.append("ETH diario sin datos - Score: 0/25")
 
-    if dxy_close_d.empty:
+    if not dxy_disponible:
         logging.warning("DXY sin datos")
         dxy_alza = False
         log_short.append("DXY sin datos - Score: 0/25")

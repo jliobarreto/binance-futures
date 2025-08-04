@@ -16,5 +16,6 @@
   "MAX_CONSEC_LOSSES": 3,
   "BTC_DROP_THRESHOLD": 0.03,
   "VOLUME_DROP_THRESHOLD": 0.3,
-  "TRADE_HISTORY_FILE": "data/trade_history.csv"
+  "TRADE_HISTORY_FILE": "data/trade_history.csv",
+  "DXY_ALT_SYMBOL": "DX-Y.NYB"
 }
