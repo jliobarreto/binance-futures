@@ -44,7 +44,11 @@ def run_bot() -> None:
         logging.info("Operaciones pausadas por control de riesgo")
         enviar_telegram("⏸ Operaciones pausadas por control de riesgo.")
         return
-
+    if not BINANCE_API_KEY or not BINANCE_API_SECRET:
+        logging.error("Faltan credenciales de Binance")
+        enviar_telegram("⚠️ Se requieren credenciales de Binance")
+        return
+    
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
     try:
         symbols = obtener_top_usdt(client, limit=TOP_ANALISIS)
