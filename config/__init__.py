@@ -41,3 +41,4 @@ __all__ = [
     "TELEGRAM_TOKEN",
     "TELEGRAM_CHAT_ID",
     *_SETTINGS.keys(),
+]

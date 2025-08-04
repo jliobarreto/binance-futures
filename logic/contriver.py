@@ -46,7 +46,16 @@ async def run_bot() -> None:
         return
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-    symbols = obtener_top_usdt(client, TOP_ANALISIS)
+    try:
+        symbols = obtener_top_usdt(client, TOP_ANALISIS)
+    except Exception as e:
+        logging.error(f"Error obteniendo símbolos: {e}")
+        enviar_telegram("⚠️ Error obteniendo símbolos de Binance")
+        return
+    logging.info(f"Comenzando análisis de {len(symbols)} símbolos")
+    resultados = []
+    max_score = None
+
     logging.info(f"Comenzando análisis de {len(symbols)} símbolos")
     resultados = []
     max_score = None
