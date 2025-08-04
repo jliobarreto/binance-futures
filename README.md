@@ -81,7 +81,9 @@ python main.py
 
 ## 📄 Variables de entorno
 
-Define en el archivo `.env` las siguientes claves:
+El módulo `config` usa [python-dotenv](https://pypi.org/project/python-dotenv/)
+para cargar automáticamente un archivo `.env` local. Debes definir las
+siguientes claves:
 
 - `BINANCE_API_KEY` y `BINANCE_API_SECRET`: credenciales de la API de Binance.
 - `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID`: datos para enviar alertas por Telegram.
