@@ -20,7 +20,7 @@ from logic.reporter import (
 from logic.risk_manager import puede_operar
 from utils.telegram import enviar_telegram, formatear_senal
 
-async def run_bot() -> None:
+def run_bot() -> None:
     """Ejecución principal del sistema."""
     contexto = obtener_contexto_mercado()
     mensaje_tendencia = (
