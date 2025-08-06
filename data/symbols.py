@@ -4,7 +4,7 @@ from binance.client import Client
 
 
 def obtener_top_usdt(client: Client, limit: int | None = None) -> list[str]:
-    """Fetch top USDT trading pairs by quote volume.
+    """Fetch top USDT trading pairs by trading volume.
 
     Parameters
     ----------
@@ -14,9 +14,12 @@ def obtener_top_usdt(client: Client, limit: int | None = None) -> list[str]:
         Maximum number of pairs to return. If ``None`` all qualifying
         symbols are returned.
     """
-    tickers = client.futures_ticker()  # type: ignore[no-untyped-call]
+    tickers = client.get_ticker_24hr()  # type: ignore[no-untyped-call]
     usdt_tickers = [t for t in tickers if t.get("symbol", "").endswith("USDT")]
-    usdt_tickers.sort(key=lambda t: float(t.get("quoteVolume", 0)), reverse=True)
+    usdt_tickers.sort(
+        key=lambda t: float(t.get("quoteVolume") or t.get("volume") or 0),
+        reverse=True,
+    )
     symbols = [t["symbol"] for t in usdt_tickers]
     if limit is not None:
         return symbols[:limit]
