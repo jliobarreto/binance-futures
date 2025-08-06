@@ -145,14 +145,15 @@ def obtener_contexto_mercado() -> ContextoMercado:
     eth_w = _descargar_seguro("ETH-USD", "1wk")
     _log_df_info("ETH-USD 1wk", eth_w)
 
-    dxy_d = _descargar_seguro("^DXY", "1d")
+    # Usamos el ETF UUP como proxy de DXY por la inestabilidad de ^DXY en yfinance
+    dxy_d = _descargar_seguro("UUP", "1d")
     dxy_disponible = True
     if dxy_d.empty:
-        logging.error(f"Datos diarios de ^DXY no disponibles. Probando {DXY_ALT_SYMBOL}")
+        logging.error(f"Datos diarios de UUP no disponibles. Probando {DXY_ALT_SYMBOL}")
         dxy_d = _descargar_seguro(DXY_ALT_SYMBOL, "1d")
         if dxy_d.empty:
             logging.warning(
-                f"Datos diarios de ^DXY y {DXY_ALT_SYMBOL} no disponibles. "
+                f"Datos diarios de UUP y {DXY_ALT_SYMBOL} no disponibles. "
                 "Se omiten cálculos basados en DXY"
             )
             dxy_disponible = False
