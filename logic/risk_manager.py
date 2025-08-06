@@ -1,5 +1,4 @@
-+23
--2
+"""Gestión de riesgo básica para limitar operaciones."""
 
 from __future__ import annotations
 
