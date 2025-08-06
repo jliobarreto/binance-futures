@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from data.models import IndicadoresTecnicos
+from data import IndicadoresTecnicos
 
 
 def calcular_score(tec: IndicadoresTecnicos) -> tuple[float, dict[str, float]]:

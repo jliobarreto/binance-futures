@@ -1,6 +1,9 @@
+"""Modelos de datos para el proyecto."""
+
 from dataclasses import dataclass
 from typing import Optional
 
+__all__ = ["IndicadoresTecnicos"]
 
 @dataclass
 class IndicadoresTecnicos:

@@ -7,7 +7,7 @@ import ta
 import logging
 from logic.scorer import calcular_score
 from logic.longterm import valida_entrada_largo_plazo
-from data.models import IndicadoresTecnicos
+from data import IndicadoresTecnicos
 from config import (
     VOLUMEN_MINIMO_USDT,
     GRIDS_GAP_PCT,

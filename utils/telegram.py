@@ -2,7 +2,7 @@ import requests
 import logging
 from typing import Any
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
-from data.models import IndicadoresTecnicos
+from data import IndicadoresTecnicos
 
 
 def formatear_senal(data: Any) -> str:
