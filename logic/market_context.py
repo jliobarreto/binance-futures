@@ -168,8 +168,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
         logging.error("Datos diarios de ETH-USD no disponibles")
     if eth_w.empty:
         logging.error("Datos semanales de ETH-USD no disponibles")
-     if not dxy_disponible:
-        logging.warning("Datos diarios de DXY no disponibles") 
+    if not dxy_disponible:
+        logging.warning("Datos diarios de DXY no disponibles")
     if vix_d.empty:
         logging.error("Datos diarios de VIX no disponibles")
 
