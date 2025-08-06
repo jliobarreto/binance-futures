@@ -23,6 +23,8 @@ def stub_config_module():
     cfg.BINANCE_API_KEY = ""
     cfg.BINANCE_API_SECRET = ""
     cfg.TOP_ANALISIS = 30
+    cfg.MAX_CONSEC_LOSSES = 3
+    cfg.BTC_DROP_THRESHOLD = 0.03
     sys.modules["config"] = cfg
     yield
     sys.modules.pop("config", None)
