@@ -1,12 +1,7 @@
 # filters.py
 
 import pandas as pd
-from config import (
-    GRIDS_GAP_PCT,
-    VOLUMEN_MINIMO_USDT,
-    RSI_OVERBOUGHT,
-    RSI_OVERSOLD,
-)
+import config
 import numpy as np
 
 # Mejora 1: Confirmación con temporalidades mayores
@@ -17,9 +12,9 @@ import numpy as np
 
 def cumple_mejoras_tecnicas(datos_1d, datos_1w, indicadores, tipo, btc_alcista, eth_alcista):
     # 1. Confirmación multi-timeframe
-    if tipo == 'LONG' and indicadores['rsi_1w'] > RSI_OVERBOUGHT:
+    if tipo == 'LONG' and indicadores['rsi_1w'] > config.RSI_OVERBOUGHT:
         return False, 'RSI semanal sobrecomprado'
-    if tipo == 'SHORT' and indicadores['rsi_1w'] < RSI_OVERSOLD:
+    if tipo == 'SHORT' and indicadores['rsi_1w'] < config.RSI_OVERSOLD:
         return False, 'RSI semanal sobrevendido'
 
     # 2. Consolidación previa + ruptura
@@ -42,7 +37,7 @@ def cumple_mejoras_tecnicas(datos_1d, datos_1w, indicadores, tipo, btc_alcista, 
     if riesgo == 0 or recompensa / riesgo < 2:
         return False, 'Relación TP/SL desfavorable'
 
-    grids = round(np.log(abs(tp / precio)) / np.log(1 + GRIDS_GAP_PCT)) if tp != precio else 0
+    grids = round(np.log(abs(tp / precio)) / np.log(1 + config.GRIDS_GAP_PCT)) if tp != precio else 0
     if grids < 2:
         return False, 'TP demasiado cercano'
 
@@ -56,7 +51,7 @@ def cumple_mejoras_tecnicas(datos_1d, datos_1w, indicadores, tipo, btc_alcista, 
     volumen_actual = indicadores.get('volumen_actual')
     volumen_promedio = indicadores.get('volumen_promedio', 0)
     if volumen_actual is not None:
-        if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
+          if volumen_actual * precio < config.VOLUMEN_MINIMO_USDT:
             return False, 'Volumen insuficiente'
         if volumen_promedio and volumen_actual < 0.5 * volumen_promedio:
             return False, 'Volumen decreciente'

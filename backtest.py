@@ -8,7 +8,7 @@ import pandas as pd
 import ta
 from binance.client import Client
 
-from config import BINANCE_API_KEY, BINANCE_API_SECRET
+import config
 from logic.longterm import valida_entrada_largo_plazo
 from logic.risk_manager import niveles_atr
 from utils.data_loader import descargar_klines
@@ -107,7 +107,7 @@ def _guardar_resumen(ops: Iterable[Dict]) -> None:
 
 
 def ejecutar_backtest(simbolos: Iterable[str]) -> None:
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+    client = Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET)
     todas: List[Dict] = []
     for sym in simbolos:
         todas.extend(_simular_operaciones(sym, client))

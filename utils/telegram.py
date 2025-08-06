@@ -1,7 +1,7 @@
 import requests
 import logging
 from typing import Any
-from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+import config
 from data import IndicadoresTecnicos
 
 
@@ -100,12 +100,12 @@ def formatear_senal(data: Any) -> str:
 
 
 def enviar_telegram(texto: str, parse_mode: str = "Markdown") -> None:
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    if not config.TELEGRAM_TOKEN or not config.TELEGRAM_CHAT_ID:
         logging.error("Faltan credenciales de Telegram")
         return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": config.TELEGRAM_CHAT_ID,
         "text": texto,
         "parse_mode": parse_mode
     }
@@ -122,14 +122,14 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
     Cada botón es una opción como 'Cuenta 1', 'Cuenta 2', 'Rechazada'.
     """
 
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    if not config.TELEGRAM_TOKEN or not config.TELEGRAM_CHAT_ID:
         logging.error("Faltan credenciales de Telegram")
         return ""
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
     keyboard = [[{"text": b, "callback_data": b}] for b in botones]
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": config.TELEGRAM_CHAT_ID,
         "text": texto,
         "parse_mode": "Markdown",
         "reply_markup": {"inline_keyboard": keyboard},
@@ -146,10 +146,10 @@ def enviar_telegram_con_botones(texto: str, botones: list) -> str:
   
 def responder_callback(callback_id: str, text: str) -> None:
     """Envía answerCallbackQuery para confirmar el callback en Telegram."""
-    if not TELEGRAM_TOKEN:
+    if not config.TELEGRAM_TOKEN:
         logging.error("Faltan credenciales de Telegram")
         return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery"
+    url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/answerCallbackQuery"
     payload = {"callback_query_id": callback_id, "text": text}
     try:
         response = requests.post(url, data=payload, timeout=10)

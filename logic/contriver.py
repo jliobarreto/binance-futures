@@ -1,13 +1,7 @@
 import asyncio
 import logging
 from binance.client import Client
-from config import (
-    BINANCE_API_KEY,
-    BINANCE_API_SECRET,
-    SCORE_THRESHOLD_LONG,
-    SCORE_THRESHOLD_SHORT,
-    TOP_ANALISIS,
-)
+import config
 from data.symbols import obtener_top_usdt
 from logic.analyzer import analizar_simbolo
 from logic.market_context import obtener_contexto_mercado
@@ -44,14 +38,14 @@ def run_bot() -> None:
         logging.info("Operaciones pausadas por control de riesgo")
         enviar_telegram("⏸ Operaciones pausadas por control de riesgo.")
         return
-    if not BINANCE_API_KEY or not BINANCE_API_SECRET:
+    if not config.BINANCE_API_KEY or not config.BINANCE_API_SECRET:
         logging.error("Faltan credenciales de Binance")
         enviar_telegram("⚠️ Se requieren credenciales de Binance")
         return
     
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+    client = Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET)
     try:
-        symbols = obtener_top_usdt(client, limit=TOP_ANALISIS)
+        symbols = obtener_top_usdt(client, limit=config.TOP_ANALISIS)
     except Exception as e:
         logging.error(f"Error obteniendo símbolos: {e}")
         enviar_telegram("⚠️ Error obteniendo símbolos de Binance")
@@ -88,14 +82,14 @@ def run_bot() -> None:
                 tec, score, _factors, _ = resultado
                 if tec.tipo == "LONG" and not contexto.apto_long:
                     motivo = (
-                        f"Score long {contexto.score_long:.0f}/100 < {SCORE_THRESHOLD_LONG}"
+                      f"Score long {contexto.score_long:.0f}/100 < {config.SCORE_THRESHOLD_LONG}"
                     )
                     logging.info(f"{sym} descartado – {motivo}")
                     registrar_signal({"symbol": sym, "score": score}, motivo)
                     continue
                 if tec.tipo == "SHORT" and not contexto.apto_short:
                     motivo = (
-                        f"Score short {contexto.score_short:.0f}/100 < {SCORE_THRESHOLD_SHORT}"
+                      f"Score short {contexto.score_short:.0f}/100 < {config.SCORE_THRESHOLD_SHORT}"
                     )
                     logging.info(f"{sym} descartado – {motivo}")
                     registrar_signal({"symbol": sym, "score": score}, motivo)

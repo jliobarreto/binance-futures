@@ -1,7 +1,7 @@
 import pandas as pd
 import ta
 from binance.client import Client
-from config import BINANCE_API_KEY, BINANCE_API_SECRET
+import config
 
 
 def _es_alcista(client: Client, symbol: str) -> bool:
@@ -15,7 +15,7 @@ def _es_alcista(client: Client, symbol: str) -> bool:
 
 def tendencia_mercado_global() -> tuple[bool, bool]:
     """Retorna la tendencia alcista de BTC y ETH en marco diario."""
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+    client = Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET)
     btc_alcista = _es_alcista(client, "BTCUSDT")
     eth_alcista = _es_alcista(client, "ETHUSDT")
     return btc_alcista, eth_alcista

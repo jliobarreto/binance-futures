@@ -5,7 +5,7 @@ import requests
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
 from utils.path import XLSX_PATH
-from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+import config
 from logic.risk_manager import registrar_resultado
 
 # XLSX_PATH ya contiene la ruta completa del archivo, por lo que solo
@@ -14,9 +14,9 @@ SIGNAL_FILE = str(XLSX_PATH)
 
 
 def enviar_telegram(texto: str, buttons: list = None):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": config.TELEGRAM_CHAT_ID,
         "text": texto,
         "parse_mode": "Markdown"
     }

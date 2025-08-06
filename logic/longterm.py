@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import ta
 
-from config import RSI_WEEKLY_OVERBOUGHT
+import config
 
 
 def valida_entrada_largo_plazo(
@@ -14,7 +14,7 @@ def valida_entrada_largo_plazo(
     ema_short_window: int = 50,
     ema_long_window: int = 200,
     rsi_window: int = 14,
-    rsi_overbought: int = RSI_WEEKLY_OVERBOUGHT,
+    rsi_overbought: int = config.RSI_WEEKLY_OVERBOUGHT,
 ) -> tuple[bool, str]:
     """Evalúa si un activo mantiene una tendencia alcista de largo plazo.
 

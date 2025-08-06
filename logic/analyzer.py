@@ -8,14 +8,7 @@ import logging
 from logic.scorer import calcular_score
 from logic.longterm import valida_entrada_largo_plazo
 from data import IndicadoresTecnicos
-from config import (
-    VOLUMEN_MINIMO_USDT,
-    GRIDS_GAP_PCT,
-    MIN_SCORE_ALERTA,
-    RSI_OVERBOUGHT,
-    RSI_WEEKLY_OVERBOUGHT,
-)
-
+import config
 
 def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     df_d = pd.DataFrame(klines_d).astype(float)
@@ -71,17 +64,17 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         f"Analizando {symbol} | Volumen actual: {volumen_actual} | Volumen promedio: {volumen_promedio}"
     )
 
-    if volumen_actual * precio < VOLUMEN_MINIMO_USDT:
+    if volumen_actual * precio < config.VOLUMEN_MINIMO_USDT:
         motivo = (
-            f"Volumen bajo: {volumen_actual * precio} < {VOLUMEN_MINIMO_USDT}"
+            f"Volumen bajo: {volumen_actual * precio} < {config.VOLUMEN_MINIMO_USDT}"
         )
         logging.info(f"{symbol} descartado por {motivo}")
         return None
 
     tipo = "LONG"
     if (
-        rsi_1d > RSI_OVERBOUGHT
-        and rsi_1w > RSI_WEEKLY_OVERBOUGHT
+        rsi_1d > config.RSI_OVERBOUGHT
+        and rsi_1w > config.RSI_WEEKLY_OVERBOUGHT
         and macd_1d < macd_signal_1d
         and ema20 < ema50 < ema200
     ):
@@ -106,7 +99,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     tp = resistencia if distancia_tp >= umbral_atr else precio + 6 * atr if tipo == 'LONG' else precio - 6 * atr
 
     # Grids
-    grids = round(np.log(abs(tp / precio)) / np.log(1 + GRIDS_GAP_PCT)) if tp != precio else 0
+    grids = round(np.log(abs(tp / precio)) / np.log(1 + config.GRIDS_GAP_PCT)) if tp != precio else 0
 
     tec = IndicadoresTecnicos(
         symbol, precio, rsi_1d, rsi_1w, macd_1d, macd_signal_1d,
@@ -136,9 +129,9 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     tec.volatility_score = factors["volatility"]
     tec.rr_score = factors["risk_reward"]
     tec.score = score
-    if score >= MIN_SCORE_ALERTA:
+    if score >= config.MIN_SCORE_ALERTA:
         logging.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
         return tec, score, factors, None
-    motivo = f"Score {score} < {MIN_SCORE_ALERTA}"
+    if score >= config.MIN_SCORE_ALERTA:
     logging.info(f"[DECISIÓN] {symbol} descartado por score insuficiente ({motivo})")
     return None

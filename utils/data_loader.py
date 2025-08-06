@@ -4,13 +4,13 @@ from __future__ import annotations
 from typing import Optional
 import pandas as pd
 from binance.client import Client
-from config import BINANCE_API_KEY, BINANCE_API_SECRET
+import config
 
 
 def descargar_klines(symbol: str, interval: str, limit: int = 500, client: Optional[Client] = None) -> pd.DataFrame:
     """Descarga velas de Binance y retorna un DataFrame."""
     if client is None:
-        client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+        client = Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET)
     klines = client.get_klines(symbol=symbol, interval=interval, limit=limit)
     df = pd.DataFrame(klines).astype(float)
     return df

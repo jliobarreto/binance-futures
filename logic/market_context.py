@@ -15,13 +15,13 @@ import ta
 import yfinance as yf
 from logic.reporter import registrar_contexto_csv
 try:  # Permite ejecutar este módulo directamente desde la carpeta logic
-    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT, DXY_ALT_SYMBOL
+    import config
 except ModuleNotFoundError:  # pragma: no cover - ajuste para entornos fuera del paquete
     import sys
     from pathlib import Path
 
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from config import SCORE_THRESHOLD_LONG, SCORE_THRESHOLD_SHORT, DXY_ALT_SYMBOL
+    import config
 
 @dataclass
 class ContextoMercado:
@@ -149,11 +149,11 @@ def obtener_contexto_mercado() -> ContextoMercado:
     dxy_d = _descargar_seguro("UUP", "1d")
     dxy_disponible = True
     if dxy_d.empty:
-        logging.error(f"Datos diarios de UUP no disponibles. Probando {DXY_ALT_SYMBOL}")
-        dxy_d = _descargar_seguro(DXY_ALT_SYMBOL, "1d")
+        logging.error(f"Datos diarios de UUP no disponibles. Probando {config.DXY_ALT_SYMBOL}")
+        dxy_d = _descargar_seguro(config.DXY_ALT_SYMBOL, "1d") 
         if dxy_d.empty:
             logging.warning(
-                f"Datos diarios de UUP y {DXY_ALT_SYMBOL} no disponibles. "
+                f"Datos diarios de UUP y {config.DXY_ALT_SYMBOL} no disponibles. "
                 "Se omiten cálculos basados en DXY"
             )
             dxy_disponible = False
@@ -387,8 +387,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
     log_short.append(f"Score parcial ETH: {score_short_eth}/25")
     log_short.append(f"Score parcial DXY-VIX: {score_short_dxy}/25")
 
-    apto_long = score_long >= SCORE_THRESHOLD_LONG
-    apto_short = score_short >= SCORE_THRESHOLD_SHORT
+    apto_long = score_long >= config.SCORE_THRESHOLD_LONG
+    apto_short = score_short >= config.SCORE_THRESHOLD_SHORT
     
     for line in log_long:
         logging.info(line)

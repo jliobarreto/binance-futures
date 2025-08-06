@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from config import BTC_DROP_THRESHOLD, MAX_CONSEC_LOSSES
+import config
 
 
 def puede_operar(consecutive_losses: int = 0, btc_drawdown: float = 0.0) -> bool:
@@ -22,8 +22,8 @@ def puede_operar(consecutive_losses: int = 0, btc_drawdown: float = 0.0) -> bool
         contrario.
     """
 
-    if consecutive_losses >= MAX_CONSEC_LOSSES:
+    if consecutive_losses >= config.MAX_CONSEC_LOSSES:
         return False
-    if btc_drawdown >= BTC_DROP_THRESHOLD:
+    if btc_drawdown >= config.BTC_DROP_THRESHOLD:
         return False
     return True
