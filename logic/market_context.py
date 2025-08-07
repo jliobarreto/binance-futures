@@ -215,7 +215,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
     )
 
     btc_ema20_w = (
-        ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1].item()
+        float(ta.trend.EMAIndicator(btc_close_w, 20).ema_indicator().iloc[-1])
         if not btc_w.empty
         else 0.0
     )
@@ -223,7 +223,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
         ta.trend.EMAIndicator(btc_close_w, 50).ema_indicator().iloc[-1].item()
         if not btc_w.empty
         else 0.0
-    )    
+    )
     btc_rsi_w = (
         ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
     )
@@ -261,8 +261,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
     log_long: list[str] = []
 
     if not btc_w.empty:
-        hl = len(btc_w) >= 2 and btc_w["Low"].iloc[-1] > btc_w["Low"].iloc[-2]
-        if hl and btc_ema20_w > btc_ema50_w:
+        hl = bool(len(btc_w) >= 2 and btc_w["Low"].iloc[-1] > btc_w["Low"].iloc[-2])
+        if hl and float(btc_ema20_w) > float(btc_ema50_w):
             score_long_btc = 25
         log_long.append(
             (
@@ -328,8 +328,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
     log_short: list[str] = []
 
     if not btc_w.empty:
-        lh = len(btc_w) >= 2 and btc_w["High"].iloc[-1] < btc_w["High"].iloc[-2]
-        if lh and btc_ema20_w < btc_ema50_w:
+        lh = bool(len(btc_w) >= 2 and btc_w["High"].iloc[-1] < btc_w["High"].iloc[-2])
+        if lh and float(btc_ema20_w) < float(btc_ema50_w):
             score_short_btc = 25
         log_short.append(
             (
