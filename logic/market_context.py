@@ -188,12 +188,6 @@ def obtener_contexto_mercado() -> ContextoMercado:
     )
     btc_low_w = btc_w["Low"].astype(float).squeeze()
     btc_high_w = btc_w["High"].astype(float).squeeze()
-    btc_low_w = (
-        btc_w["Low"].astype(float).squeeze() if "Low" in btc_w else pd.Series(dtype=float)
-    )
-    btc_high_w = (
-        btc_w["High"].astype(float).squeeze() if "High" in btc_w else pd.Series(dtype=float)
-    )
     eth_close_d = (
         eth_d["Close"].astype(float).squeeze() if "Close" in eth_d else pd.Series(dtype=float)
     )
@@ -233,7 +227,9 @@ def obtener_contexto_mercado() -> ContextoMercado:
         else 0.0
     )
     btc_rsi_w = (
-        ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1] if len(btc_close_w) >= 14 else 0.0
+        ta.momentum.RSIIndicator(btc_close_w, 14).rsi().iloc[-1].item()
+        if len(btc_close_w) >= 14
+        else 0.0
     )
 
     eth_ema20_d = ta.trend.EMAIndicator(eth_close_d, 20).ema_indicator().iloc[-1] if not eth_d.empty else 0.0
@@ -282,7 +278,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
             )
         )
 
-        rsi_w = btc_rsi_w
+        rsi_w = float(btc_rsi_w)
         vol_up = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] > btc_w["Volume"].iloc[-2]
         if rsi_w > 50 and vol_up:
             score_long_rsi = 25
@@ -308,12 +304,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
             )
         )
     else:
-        log_long.append("ETH diario sin datos - Score: 0/25")
-
-    if not dxy_disponible:
-        logging.warning("DXY sin datos")
-        dxy_bajista = False
-        log_long.append("DXY sin datos - Score: 0/25")
+@@ -306,61 +313,64 @@ def obtener_contexto_mercado() -> ContextoMercado:
     else:
         dxy_bajista = not _tendencia_alcista(dxy_close_d)
         if dxy_bajista and vix_valor < 20:
@@ -352,7 +343,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
             )
         )
 
-        rsi_w = btc_rsi_w
+        rsi_w = float(btc_rsi_w)
         vol_sell = len(btc_w) >= 2 and btc_w["Volume"].iloc[-1] >= btc_w["Volume"].iloc[-2]
         if rsi_w < 50 and vol_sell:
             score_short_rsi = 25
