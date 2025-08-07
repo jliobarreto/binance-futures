@@ -181,15 +181,13 @@ def obtener_contexto_mercado() -> ContextoMercado:
         f"BTC close 1d último valor: {btc_close_d.iloc[-1] if not btc_close_d.empty else 'N/A'}"
     )
     btc_close_w = (
-        btc_low_w  = (
-        btc_w["Low"].astype(float).squeeze() if "Low" in btc_w else pd.Series(dtype=float)
-    )
-        btc_high_w = (
-        btc_w["High"].astype(float).squeeze() if "High" in btc_w else pd.Series(dtype=float)
+        btc_w["Close"].astype(float).squeeze() if "Close" in btc_w else pd.Series(dtype=float)
     )
     logging.debug(
         f"BTC close 1w último valor: {btc_close_w.iloc[-1] if not btc_close_w.empty else 'N/A'}"
     )
+    btc_low_w = btc_w["Low"].astype(float).squeeze()
+    btc_high_w = btc_w["High"].astype(float).squeeze()
     btc_low_w = (
         btc_w["Low"].astype(float).squeeze() if "Low" in btc_w else pd.Series(dtype=float)
     )
@@ -274,9 +272,6 @@ def obtener_contexto_mercado() -> ContextoMercado:
         hl = bool(
             len(btc_low_w) >= 2
             and float(btc_low_w.iloc[-1]) > float(btc_low_w.iloc[-2])
-            lh = bool(
-            len(btc_high_w) >= 2
-            and float(btc_high_w.iloc[-1]) < float(btc_high_w.iloc[-2])
         )
         if hl and float(btc_ema20_w) > float(btc_ema50_w):
             score_long_btc = 25
