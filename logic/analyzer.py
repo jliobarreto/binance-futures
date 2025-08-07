@@ -132,6 +132,9 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     if score >= config.MIN_SCORE_ALERTA:
         logging.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
         return tec, score, factors, None
-    if score >= config.MIN_SCORE_ALERTA:
-    logging.info(f"[DECISIÓN] {symbol} descartado por score insuficiente ({motivo})")
-    return None
+    else:
+        motivo = f"Score {score} < {config.MIN_SCORE_ALERTA}"
+        logging.info(
+            f"[DECISIÓN] {symbol} descartado por score insuficiente ({motivo})"
+        )
+        return None

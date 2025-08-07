@@ -1,35 +1,24 @@
-import yfinance as yf
-import logging
+import os
+from .env import load_.env
+from binance.client import Client
 
-logging.basicConfig(level=logging.INFO)
+# Cargar variables del entorno
+load_dotenv()
 
-def get_macro_data(period: str = "5d", interval: str = "1d") -> dict:
-    result = {"VIX": None, "DXY": None}
+api_key = os.getenv("BINANCE_API_KEY")
+api_secret = os.getenv("BINANCE_API_SECRET")
 
-    try:
-        vix = yf.download("^VIX", period=period, interval=interval, progress=False)
-        if not vix.empty:
-            result["VIX"] = round(vix["Close"].iloc[-1].item(), 2)
-            logging.info(f"✅ VIX cargado: {result['VIX']}")
-        else:
-            logging.warning("⚠️ VIX está vacío")
-    except Exception as e:
-        logging.error(f"❌ Error VIX: {e}")
+if not api_key or not api_secret:
+    print("❌ API Key o Secret no están definidos en el .env")
+    exit(1)
 
-    try:
-        dxy = yf.download("UUP", period=period, interval=interval, progress=False)
-        if not dxy.empty:
-            result["DXY"] = round(dxy["Close"].iloc[-1].item(), 2)
-            logging.info(f"✅ DXY (UUP) cargado: {result['DXY']}")
-        else:
-            logging.warning("⚠️ DXY (UUP) está vacío")
-    except Exception as e:
-        logging.error(f"❌ Error DXY/UUP: {e}")
-
-    return result
-
-if __name__ == "__main__":
-    datos = get_macro_data()
-    print("\n📊 RESULTADO FINAL:")
-    print(datos)
-
+try:
+    client = Client(api_key, api_secret)
+    # Probar llamada sencilla: obtener información de cuenta (requiere claves válidas)
+    account_info = client.get_account()
+    print("✅ Conexión exitosa. Información básica de cuenta:")
+    print(f" - ID de cuenta: {account_info['accountType']}")
+    print(f" - Cantidad de activos: {len(account_info['balances'])}")
+except Exception as e:
+    print("❌ Error al conectar con la API de Binance:")
+    print(e)
