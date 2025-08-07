@@ -304,7 +304,7 @@ def obtener_contexto_mercado() -> ContextoMercado:
             )
         )
     else:
-@@ -306,61 +313,64 @@ def obtener_contexto_mercado() -> ContextoMercado:
+def obtener_contexto_mercado() -> ContextoMercado:
     else:
         dxy_bajista = not _tendencia_alcista(dxy_close_d)
         if dxy_bajista and vix_valor < 20:
