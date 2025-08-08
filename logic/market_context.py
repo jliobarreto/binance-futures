@@ -304,8 +304,9 @@ def obtener_contexto_mercado() -> ContextoMercado:
             )
         )
     else:
-def obtener_contexto_mercado() -> ContextoMercado:
-    else:
+        log_long.append("ETH diario sin datos - Score: 0/25")
+
+    if dxy_disponible:
         dxy_bajista = not _tendencia_alcista(dxy_close_d)
         if dxy_bajista and vix_valor < 20:
             score_long_dxy = 25
@@ -315,7 +316,8 @@ def obtener_contexto_mercado() -> ContextoMercado:
                 f"Score: {score_long_dxy}/25"
             )
         )
-
+    else:
+    log_long.append("DXY sin datos - Score: 0/25")
     score_long = score_long_btc + score_long_rsi + score_long_eth + score_long_dxy
     log_long.append(f"Score parcial BTC: {score_long_btc}/25")
     log_long.append(f"Score parcial RSI/Vol: {score_long_rsi}/25")
