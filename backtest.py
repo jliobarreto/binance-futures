@@ -1,6 +1,12 @@
 """Modulo para ejecutar backtests simples sobre datos historicos."""
 from __future__ import annotations
 
+import os
+from utils.logger import setup_logging
+
+MODE = os.getenv("APP_MODE", "production")
+setup_logging(MODE)
+
 from datetime import datetime
 from typing import Iterable, Dict, List
 

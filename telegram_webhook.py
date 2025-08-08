@@ -1,6 +1,10 @@
-import logging
 import os
+from utils.logger import setup_logging
 
+MODE = os.getenv("APP_MODE", "production")
+setup_logging(MODE)
+
+import logging
 from flask import Flask, request, jsonify
 
 from notifier.notifier import manejar_callback
