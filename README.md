@@ -89,6 +89,17 @@ siguientes claves:
 - `TELEGRAM_TOKEN` y `TELEGRAM_CHAT_ID`: datos para enviar alertas por Telegram.
 
 ---
+## 📝 Logging
+
+Por defecto, el sistema registra mensajes con nivel `INFO`. Si deseas ver
+mensajes de depuración (`DEBUG`), ejecuta el programa en modo debug
+estableciendo la variable de entorno `APP_MODE`:
+
+```bash
+APP_MODE=debug python main.py
+```
+
+---
 
 ## 🧪 Flujo de ejecución
 
