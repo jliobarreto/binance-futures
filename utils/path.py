@@ -1,7 +1,7 @@
 from pathlib import Path
 
-# Base directory for generated output
-OUTPUT_DIR = Path("output")
+# Base directory for generated output anchored to the project root
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
 
 # Directory where log and CSV files are stored
 LOGS_DIR = OUTPUT_DIR / "logs"
