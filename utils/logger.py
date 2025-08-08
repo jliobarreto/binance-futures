@@ -20,6 +20,7 @@ def setup_logging(mode: str = "production") -> None:
         level=level,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
+        force=True
             logging.FileHandler(runtime_file, encoding="utf-8"),
             logging.StreamHandler(),
         ],
