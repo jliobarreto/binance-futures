@@ -1,9 +1,15 @@
 import logging
+import os
+
 from flask import Flask, request, jsonify
 
 from notifier.notifier import manejar_callback
 from logic.memory import operaciones_enviadas
 from utils.telegram_utils import responder_callback
+from utils.logger import setup_logging
+
+MODE = os.getenv("APP_MODE", "production")
+setup_logging(MODE)
 
 app = Flask(__name__)
 
