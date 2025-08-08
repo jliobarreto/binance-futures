@@ -9,6 +9,9 @@ from logic.scorer import calcular_score
 from logic.longterm import valida_entrada_largo_plazo
 from data import IndicadoresTecnicos
 import config
+from utils.logger import get_audit_logger
+
+audit_logger = get_audit_logger()
 
 def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     df_d = pd.DataFrame(klines_d).astype(float)
@@ -53,7 +56,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     es_valido, motivo_lp = valida_entrada_largo_plazo(df_d, df_w)
     if not es_valido:
         motivo = f"Validación largo plazo: {motivo_lp}"
-        logging.info(f"{symbol} descartado por {motivo}")
+        audit_logger.info(f"{symbol} descartado por {motivo}")
         return None
 
     precio = close_d.iloc[-1]
@@ -68,7 +71,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         motivo = (
             f"Volumen bajo: {volumen_actual * precio} < {config.VOLUMEN_MINIMO_USDT}"
         )
-        logging.info(f"{symbol} descartado por {motivo}")
+        audit_logger.info(f"{symbol} descartado por {motivo}")
         return None
 
     tipo = "LONG"
@@ -86,7 +89,7 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
         motivo = (
             f"Contradicción con tendencia global. Tipo {tipo}, BTC {btc_alcista}, ETH {eth_alcista}"
         )
-        logging.info(f"{symbol} descartado por {motivo}")
+        audit_logger.info(f"{symbol} descartado por {motivo}")
         return None
 
     # SL con ATR
@@ -130,11 +133,11 @@ def analizar_simbolo(symbol, klines_d, klines_w, btc_alcista, eth_alcista):
     tec.rr_score = factors["risk_reward"]
     tec.score = score
     if score >= config.MIN_SCORE_ALERTA:
-        logging.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
+        audit_logger.info("[DECISIÓN] Activo candidato – pendiente validación BTC")
         return tec, score, factors, None
     else:
         motivo = f"Score {score} < {config.MIN_SCORE_ALERTA}"
-        logging.info(
+        audit_logger.info(
             f"[DECISIÓN] {symbol} descartado por score insuficiente ({motivo})"
         )
         return None

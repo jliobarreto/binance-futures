@@ -13,6 +13,9 @@ from logic.reporter import (
 )
 from logic.risk_manager import puede_operar
 from utils.telegram import enviar_telegram, formatear_senal
+from utils.logger import get_audit_logger
+
+audit_logger = get_audit_logger()
 
 def run_bot() -> None:
     """Ejecución principal del sistema."""
@@ -31,15 +34,15 @@ def run_bot() -> None:
         f"SHORT {contexto.score_short:.0f}/100"
     )
     if not contexto.apto_long and not contexto.apto_short:
-        logging.info("Mercado desfavorable, análisis detenido")
+        audit_logger.info("Mercado desfavorable, análisis detenido")
         enviar_telegram("⚠️ Mercado desfavorable. Trading detenido.")
         return
     if not puede_operar():
-        logging.info("Operaciones pausadas por control de riesgo")
+        audit_logger.info("Operaciones pausadas por control de riesgo")
         enviar_telegram("⏸ Operaciones pausadas por control de riesgo.")
         return
     if not config.BINANCE_API_KEY or not config.BINANCE_API_SECRET:
-        logging.error("Faltan credenciales de Binance")
+        audit_logger.error("Faltan credenciales de Binance")
         enviar_telegram("⚠️ Se requieren credenciales de Binance")
         return
     
@@ -84,14 +87,14 @@ def run_bot() -> None:
                     motivo = (
                       f"Score long {contexto.score_long:.0f}/100 < {config.SCORE_THRESHOLD_LONG}"
                     )
-                    logging.info(f"{sym} descartado – {motivo}")
+                    audit_logger.info(f"{sym} descartado – {motivo}")
                     registrar_signal({"symbol": sym, "score": score}, motivo)
                     continue
                 if tec.tipo == "SHORT" and not contexto.apto_short:
                     motivo = (
                       f"Score short {contexto.score_short:.0f}/100 < {config.SCORE_THRESHOLD_SHORT}"
                     )
-                    logging.info(f"{sym} descartado – {motivo}")
+                    audit_logger.info(f"{sym} descartado – {motivo}")
                     registrar_signal({"symbol": sym, "score": score}, motivo)
                     continue
                 if max_score is None or score > max_score:
@@ -111,7 +114,7 @@ def run_bot() -> None:
                 }
                 resultados.append(resultado_dict)
                 registrar_signal({"symbol": sym, "score": score})
-                logging.info(f"Resultado de {sym}: {resultado_dict}")
+                audit_logger.info(f"Resultado de {sym}: {resultado_dict}")
                 mensaje_senal = formatear_senal(resultado_dict)
                 enviar_telegram(mensaje_senal)
             else:
