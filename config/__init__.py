@@ -59,4 +59,8 @@ _missing = []
 if not TELEGRAM_TOKEN: _missing.append("TELEGRAM_TOKEN (.env)")
 if not TELEGRAM_CHAT_ID: _missing.append("TELEGRAM_CHAT_ID (.env)")
 if _missing:
-    raise RuntimeError(f"Faltan variables requeridas: {', '.join(_missing)}")
+    import logging
+    logging.warning(
+        "Faltan variables: %s (continuo; el envío a Telegram quedará desactivado)",
+        ", ".join(_missing),
+    )

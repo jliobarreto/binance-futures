@@ -1,10 +1,12 @@
+# notifier/telegram.py
+from __future__ import annotations
+
 import logging
-from typing import Any, Optional
+import time
+from typing import Any, Dict, Optional, List
 
 import requests
 import config
-from data import IndicadoresTecnicos
-
 
 # ───────────────────────── helpers ─────────────────────────
 
@@ -20,7 +22,7 @@ def _safe_float(x: Any) -> Optional[float]:
         return None
 
 def _fmt_price(x: Optional[float]) -> str:
-    """Formatea con decimales según magnitud (útil para spot/futuros)."""
+    """Formatea con decimales según magnitud (cubre la mayoría de símbolos)."""
     if x is None:
         return "—"
     ax = abs(x)
@@ -32,135 +34,112 @@ def _fmt_price(x: Optional[float]) -> str:
         return f"{x:.5f}"
     return f"{x:.8f}"
 
-def _escape_html(text: str) -> str:
-    return (
-        str(text)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
-
-
-# ───────────────────────── formato de señal ─────────────────────────
-
-def formatear_senal(data: Any, parse_mode: str = "HTML") -> str:
+def _format_signal_text(s: Dict) -> str:
     """
-    Devuelve un mensaje multi-línea listo para Telegram.
-
-    Acepta:
-      - IndicadoresTecnicos con attrs: symbol, tipo/bias, precio/entry, sl, tp/take_profit/stop_profit, score, rsi_1d, macd_1d, macd_signal_1d, volumen_actual, volumen_promedio, grids.
-      - dict con claves equivalentes.
-
-    Muestra: Entry, StopLoss y Stop Profit (único).
+    Construye el mensaje en Markdown.
+    Espera en s: symbol, bias, entry, stop_loss, (take_profit o stop_profit), score, timeframe, context(list[str])
     """
-    # ---- 1) Extraer datos robustamente
-    if isinstance(data, IndicadoresTecnicos):
-        symbol = getattr(data, "symbol", None)
-        tipo = getattr(data, "tipo", getattr(data, "bias", None))
-        precio = _safe_float(getattr(data, "precio", None))
-        entry = _safe_float(getattr(data, "entry", precio))
-        sl = _safe_float(getattr(data, "sl", getattr(data, "stop_loss", None)))
-        # aceptar tp/take_profit/stop_profit
-        sp = _safe_float(
-            getattr(data, "tp",
-                    getattr(data, "take_profit",
-                            getattr(data, "stop_profit", None)))
-        )
-        score = _safe_float(getattr(data, "score", None))
-        rsi = _safe_float(getattr(data, "rsi_1d", None))
-        macd_up = _safe_float(getattr(data, "macd_1d", None))
-        macd_signal = _safe_float(getattr(data, "macd_signal_1d", None))
-        vitalidad = None
-        try:
-            va = _safe_float(getattr(data, "volumen_actual", None))
-            vp = _safe_float(getattr(data, "volumen_promedio", None))
-            vitalidad = (va / vp) if (va and vp and vp > 0) else None
-        except Exception:
-            pass
-        grids = getattr(data, "grids", None)
-    elif isinstance(data, dict):
-        symbol = data.get("Criptomoneda") or data.get("symbol")
-        tipo = data.get("Señal") or data.get("tipo") or data.get("bias")
-        precio = _safe_float(data.get("Precio") or data.get("close") or data.get("precio"))
-        entry = _safe_float(data.get("entry", precio))
-        sl = _safe_float(data.get("SL") or data.get("stop_loss") or data.get("sl"))
-        sp = _safe_float(data.get("TP") or data.get("take_profit") or data.get("stop_profit"))
-        score = _safe_float(data.get("Score") or data.get("score"))
-        rsi = _safe_float(data.get("RSI") or data.get("rsi_1d"))
-        macd_up = _safe_float(data.get("MACD") or data.get("macd_1d"))
-        macd_signal = _safe_float(data.get("MACD_signal") or data.get("macd_signal_1d"))
-        vitalidad = _safe_float(data.get("Vitalidad"))
-        grids = data.get("Grids")
-    else:
-        raise TypeError("Objeto no soportado para formatear_senal")
+    symbol = s.get("symbol", "—")
+    bias = (s.get("bias") or "—").upper()
+    entry = _safe_float(s.get("entry"))
+    sl = _safe_float(s.get("stop_loss"))
+    tp = _safe_float(s.get("take_profit", s.get("stop_profit")))
 
-    symbol_s = _escape_html(symbol or "—")
-    tipo_s = (str(tipo).upper() if tipo else "—")
-    # Dirección del MACD (si disponible)
-    direccion_macd = ""
-    if macd_up is not None and macd_signal is not None:
-        direccion_macd = "alcista" if macd_up > macd_signal else "bajista"
-
-    # Calcula RR si hay entry/sl/sp
     rr_txt = ""
-    if entry is not None and sl is not None and sp is not None:
+    if entry is not None and sl is not None and tp is not None:
         r = abs(entry - sl)
         if r > 0:
-            rr = abs(sp - entry) / r
+            rr = abs(tp - entry) / r
             rr_txt = f" (≈{rr:.2f}R)"
 
-    # Título según tipo
-    encabezado = "🚨 SEÑAL DE COMPRA" if tipo_s == "LONG" else "🚨 SEÑAL DE VENTA"
+    header_emoji = "🟢" if bias == "LONG" else "🔴"
+    tf = s.get("timeframe", "1d/1w")
+    score = s.get("score", "?")
+    ctx_lines: List[str] = s.get("context", []) or []
+    ctx = "\n".join(f"• {c}" for c in ctx_lines)
 
-    # ---- 2) Construir mensaje (HTML por defecto)
-    lineas = [
-        _escape_html(encabezado),
-        f"🪙 <b>Criptomoneda:</b> {symbol_s}",
-        f"🤖 <b>Señal:</b> {_escape_html(tipo_s)}",
-        f"🔹 <b>Entry:</b> ${_fmt_price(entry)}",
-        f"🛑 <b>Stop Loss:</b> ${_fmt_price(sl)}",
-        f"🟩 <b>Stop Profit:</b> ${_fmt_price(sp)}{_escape_html(rr_txt)}",
-    ]
+    return (
+        f"{header_emoji} *FUTURES SIGNAL* – {tf}\n"
+        f"*{symbol}* ({bias}) — *Score:* {score}\n\n"
+        f"*Entry:* `{_fmt_price(entry)}`\n"
+        f"*StopLoss:* `{_fmt_price(sl)}`\n"
+        f"*StopProfit:* `{_fmt_price(tp)}`{rr_txt}\n"
+        + (f"\n*Contexto:*\n{ctx}" if ctx else "")
+    )
 
-    if rsi is not None or direccion_macd:
-        stats = []
-        if rsi is not None:
-            stats.append(f"RSI {rsi:.1f}")
-        if direccion_macd:
-            stats.append(f"MACD {direccion_macd}")
-        lineas.append(f"📊 <b>Momentum:</b> {_escape_html(' | '.join(stats))}")
+# ───────────────────────── clase OO (opcional) ─────────────────────────
 
-    if vitalidad is not None:
-        lineas.append(f"⚡ <b>Vitalidad:</b> {vitalidad:.2f}×")
+class TelegramNotifier:
+    def __init__(self, token: str, chat_id: str, timeout: int = 15):
+        self.base = f"https://api.telegram.org/bot{token}/sendMessage"
+        self.chat_id = chat_id
+        self.timeout = timeout
 
-    if grids is not None:
-        lineas.append(f"📐 <b>Grids:</b> {_escape_html(grids)}")
+    def send_signal(self, signal: Dict, retry: int = 2) -> bool:
+        text = _format_signal_text(signal)
+        payload = {
+            "chat_id": str(self.chat_id),
+            "text": text,
+            "parse_mode": "Markdown",
+        }
+        for i in range(retry + 1):
+            try:
+                r = requests.post(self.base, json=payload, timeout=self.timeout)
+                if r.ok:
+                    return True
+            except Exception as e:
+                logging.warning("Fallo envío Telegram (intento %s): %s", i + 1, e)
+            time.sleep(1 + i)
+        return False
 
-    if score is not None:
-        try:
-            punt = float(score)
-            if punt >= 70:
-                comentario = "🟢 Señal fuerte"
-            elif punt >= 55:
-                comentario = "🟡 Señal viable"
-            else:
-                comentario = None
-        except Exception:
-            comentario = None
-        if comentario:
-            lineas.append(comentario)
+# ───────────────────────── wrappers de compatibilidad ─────────────────────────
 
-    return "\n".join(lineas)
+def formatear_senal(data: Any) -> str:
+    """
+    Acepta:
+      - dataclass IndicadoresTecnicos
+      - dict con claves: symbol/bias/entry/stop_loss/(take_profit|stop_profit)/score/context/timeframe
+    """
+    try:
+        from data.models import IndicadoresTecnicos
+    except Exception:
+        IndicadoresTecnicos = object  # type: ignore
 
+    if isinstance(data, dict):
+        s: Dict = {
+            "symbol": data.get("symbol") or data.get("Criptomoneda"),
+            "bias": (data.get("bias") or data.get("Señal") or "").upper(),
+            "score": data.get("score") or data.get("Score"),
+            "timeframe": data.get("timeframe", "1d/1w"),
+            "entry": data.get("entry") or data.get("Precio"),
+            "stop_loss": data.get("stop_loss") or data.get("SL"),
+            "take_profit": data.get("take_profit") or data.get("TP") or data.get("stop_profit"),
+            "context": data.get("context") or [],
+        }
+        return _format_signal_text(s)
 
-# ───────────────────────── envío a Telegram ─────────────────────────
+    if isinstance(data, IndicadoresTecnicos):
+        s = {
+            "symbol": getattr(data, "symbol", None),
+            "bias": (getattr(data, "bias", None) or getattr(data, "tipo", "")).upper(),
+            "score": getattr(data, "score", None),
+            "timeframe": "1d/1w",
+            "entry": getattr(data, "entry", getattr(data, "precio", None)),
+            "stop_loss": getattr(data, "stop_loss", getattr(data, "sl", None)),
+            "take_profit": getattr(data, "take_profit", getattr(data, "tp", None)),
+            "context": [],
+        }
+        return _format_signal_text(s)
+
+    raise TypeError("Objeto no soportado para formatear_senal")
 
 def enviar_telegram(
     texto: str,
-    parse_mode: str = "HTML",
+    parse_mode: str = "Markdown",
     disable_notification: bool = False,
     thread_id: Optional[int] = None,
 ) -> None:
+    """Envía un mensaje de texto ya formateado a Telegram."""
     if not getattr(config, "TELEGRAM_TOKEN", None) or not getattr(config, "TELEGRAM_CHAT_ID", None):
         logging.error("Faltan credenciales de Telegram")
         return
@@ -176,23 +155,18 @@ def enviar_telegram(
         payload["message_thread_id"] = thread_id
 
     try:
-        # Mejor enviar como JSON (evita problemas de encoding)
         resp = requests.post(url, json=payload, timeout=15)
         resp.raise_for_status()
     except Exception as e:
         logging.error(f"Error enviando mensaje a Telegram: {e}")
 
-
 def enviar_telegram_con_botones(
     texto: str,
-    botones: list[str],
-    parse_mode: str = "HTML",
+    botones: List[str],
+    parse_mode: str = "Markdown",
     thread_id: Optional[int] = None,
 ) -> str:
-    """
-    Envía un mensaje con botones inline (ej.: 'Cuenta 1', 'Cuenta 2', 'Rechazada').
-    Devuelve el message_id si tuvo éxito.
-    """
+    """Envía mensaje con botones inline. Devuelve el message_id si tuvo éxito."""
     if not getattr(config, "TELEGRAM_TOKEN", None) or not getattr(config, "TELEGRAM_CHAT_ID", None):
         logging.error("Faltan credenciales de Telegram")
         return ""
@@ -217,9 +191,8 @@ def enviar_telegram_con_botones(
         logging.error(f"Error enviando mensaje con botones: {e}")
         return ""
 
-
 def responder_callback(callback_id: str, text: str) -> None:
-    """Confirma el callback en Telegram (cuando ya uses webhooks)."""
+    """Confirma el callback en Telegram (cuando uses webhooks)."""
     if not getattr(config, "TELEGRAM_TOKEN", None):
         logging.error("Faltan credenciales de Telegram")
         return
