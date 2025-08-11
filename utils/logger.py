@@ -1,46 +1,31 @@
-import logging
+from __future__ import annotations
+import logging, os
 from pathlib import Path
-from .path import LOGS_DIR
+from logging.handlers import RotatingFileHandler
 
+_LOG_DIR = Path("output") / "logs"
+_LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 def setup_logging(mode: str = "production") -> None:
-    """Configure root and audit loggers.
+    level = logging.DEBUG if mode.lower() == "development" else logging.INFO
+    fmt = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+    datefmt = "%Y-%m-%d %H:%M:%S"
 
-    Parameters
-    ----------
-    mode: str, optional
-        Execution mode. "debug" enables verbose output.
-    """
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    # root logger
+    logging.basicConfig(level=level, format=fmt, datefmt=datefmt)
 
-    level = logging.DEBUG if mode == "debug" else logging.INFO
-
-    runtime_file = LOGS_DIR / "runtime.log"
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-        force=True
-            logging.FileHandler(runtime_file, encoding="utf-8"),
-            logging.StreamHandler(),
-        ],
-    )
-
-    # Configure dedicated audit logger
-    audit_file = LOGS_DIR / "audit.log"
-    audit_handler = logging.FileHandler(audit_file, encoding="utf-8")
-    audit_handler.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    )
-    audit_logger = logging.getLogger("audit")
-    audit_logger.setLevel(level)
-    audit_logger.addHandler(audit_handler)
-    audit_logger.propagate = False
-
+    # archivo rotativo
+    file_handler = RotatingFileHandler(_LOG_DIR / "app.log", maxBytes=5_000_000, backupCount=3, encoding="utf-8")
+    file_handler.setLevel(level)
+    file_handler.setFormatter(logging.Formatter(fmt, datefmt))
+    logging.getLogger().addHandler(file_handler)
 
 def get_audit_logger() -> logging.Logger:
-    """Return the dedicated audit logger."""
-    return logging.getLogger("audit")
-
-
-__all__ = ["setup_logging", "get_audit_logger"]
+    logger = logging.getLogger("audit")
+    if not any(isinstance(h, RotatingFileHandler) for h in logger.handlers):
+        fmt = "%(asctime)s | %(levelname)s | %(message)s"
+        handler = RotatingFileHandler(_LOG_DIR / "audit.log", maxBytes=5_000_000, backupCount=5, encoding="utf-8")
+        handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
+        logger.setLevel(logging.INFO)
+        logger.addHandler(handler)
+    return logger
