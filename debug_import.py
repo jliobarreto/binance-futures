@@ -67,6 +67,30 @@ def _fmt(x: float) -> str:
     return f"{x:.8f}"
 
 
+def _daily_quote_volume_usdt(kl: list) -> float:
+    """
+    Obtiene el volumen en USDT de la última vela diaria.
+    - Si el kline trae 'quote_volume' (posición 7 en Binance), se usa tal cual.
+    - Si no, se aproxima como: volumen_base * close.
+    Devuelve NaN si no es posible calcularlo.
+    """
+    try:
+        if not kl:
+            return float("nan")
+        last = kl[-1]
+        # Formato típico kline Binance:
+        # [open_time, open, high, low, close, volume_base, close_time, quote_volume, ...]
+        if len(last) >= 8:
+            return float(last[7])
+        if len(last) >= 6:
+            close = float(last[4])
+            vol_base = float(last[5])
+            return vol_base * close
+    except Exception:
+        pass
+    return float("nan")
+
+
 def _build_signal_dict(tec, score: float) -> dict:
     entry = float(getattr(tec, "entry", getattr(tec, "precio", np.nan)))
     sl = float(getattr(tec, "stop_loss", getattr(tec, "sl", np.nan)))
@@ -88,6 +112,9 @@ def _build_signal_dict(tec, score: float) -> dict:
     if rr > 0:
         ctx.append(f"RR≈{rr:.2f}R")
 
+    # Adjuntar payload crudo si existe (opcional, útil para depurar)
+    raw_payload = getattr(tec, "alert_payload", None)
+
     return {
         "symbol": tec.symbol,
         "bias": bias,
@@ -97,6 +124,7 @@ def _build_signal_dict(tec, score: float) -> dict:
         "stop_loss": sl,
         "take_profit": tp,
         "context": ctx,
+        "raw": raw_payload,
         # estos contadores se rellenan en el envío en tiempo real
         "evaluated": 0,
         "eligible": 0,
@@ -183,17 +211,28 @@ def main() -> None:
             if out is None:
                 fails += 1
                 continue
+
             tec, score, _factors, _ = out
 
-            # filtro mínimo de score (duro)
+            # Filtro mínimo de score (duro)
             if float(score) < float(args.min_score):
                 fails += 1
                 continue
 
-            # filtro rápido de liquidez (USDT aprox. con vela actual)
-            precio = float(getattr(tec, "precio", getattr(tec, "entry", 0.0)))
-            vol_usdt_est = float(getattr(tec, "volumen_actual", 0.0)) * max(precio, 0.0)
-            if vol_usdt_est < float(args.min_vol_usdt):
+            # --- Filtro de liquidez (USDT en la vela diaria) ---
+            vol_usdt_est = _daily_quote_volume_usdt(kl_d)
+
+            # Fallbacks por si no hay quote_volume en el kline o el cálculo falla
+            if not np.isfinite(vol_usdt_est) or vol_usdt_est <= 0:
+                vol_usdt_est = float(
+                    getattr(tec, "vol_usdt_24h", getattr(tec, "volumen_usdt", 0.0))
+                )
+            if not np.isfinite(vol_usdt_est) or vol_usdt_est <= 0:
+                precio = float(getattr(tec, "precio", getattr(tec, "entry", 0.0)))
+                vol_base = float(getattr(tec, "volumen_actual", 0.0))
+                vol_usdt_est = vol_base * max(precio, 0.0)
+
+            if not np.isfinite(vol_usdt_est) or vol_usdt_est < float(args.min_vol_usdt):
                 fails += 1
                 continue
 

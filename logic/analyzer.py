@@ -1,5 +1,17 @@
 # analyzer.py
 # -*- coding: utf-8 -*-
+"""
+Analizador de símbolos (spot/futuros) para horizonte swing/meses.
+
+- Filtros de calidad: ADX mínimo, ATR% máximo, volumen USDT mínimo.
+- Sesgo operativo (LONG/SHORT) con coherencia diaria+semanal (config.BIAS_MODE).
+- Niveles robustos (Entry/SL/TP) con saneo y floor extra en SHORT.
+- Score v2 con componentes (tendencia, momentum, volatilidad, volumen, R:R).
+- Penalización macro opcional (VIX/DXY) limitada por config.MACRO_SCORE_CAP.
+- Logs de auditoría detallados.
+
+Próximo archivo según tu plan: notifier/sender.py
+"""
 
 from __future__ import annotations
 import logging
@@ -13,7 +25,7 @@ import ta
 
 import config
 from logic.levels import compute_levels
-from logic.scorer import inferir_bias  # mantenemos sólo el sesgo
+from logic.scorer import inferir_bias  # mantenemos sólo el sesgo (score interno no se usa aquí)
 from utils.logger import get_audit_logger
 
 audit_logger = get_audit_logger()
@@ -113,14 +125,24 @@ def _sanitize_levels(
             rr_tp = entry + tp_r_mult * (entry - sl)
             tp = max(rr_tp, swing_high, entry + 1.5 * atr)
             info["fix_tp_long"] = True
+
     elif bias == "SHORT":
         if sl <= entry:
             sl = _clamp_positive(max(entry + 1.5 * atr, (entry + swing_high) / 2.0))
             info["fix_sl_short"] = True
         if tp >= entry or tp <= 0.0:
             rr_tp = entry - tp_r_mult * (sl - entry)
-            tp = _clamp_positive(min(rr_tp, entry - 1.5 * atr, swing_low))
+            base_tp = min(rr_tp, entry - 1.5 * atr, swing_low)
+            tp = _clamp_positive(base_tp)
             info["fix_tp_short"] = True
+
+        # Floor extra para evitar TP irreales (~0) en SHORT
+        max_drop_pct = float(getattr(config, "MAX_TP_DROP_PCT_SHORT", 0.85))   # máx 85% desde entry
+        atr_floor_mult = float(getattr(config, "MAX_TP_ATR_MULT_SHORT", 8.0))  # suelo alternativo: 8*ATR
+        tp_floor = max(entry * (1.0 - max_drop_pct), entry - atr_floor_mult * atr)
+        if tp < tp_floor:
+            tp = _clamp_positive(tp_floor)
+            info["tp_floor_short"] = True
 
     entry = float(entry)
     sl = _clamp_positive(sl)
@@ -163,7 +185,6 @@ def _build_tecnico_container(**fields: Any) -> Any:
             filtered = {k: v for k, v in fields.items() if k in allowed}
             return Container(**filtered)
         except TypeError:
-            # reintento minimalista sin kwargs extraños
             try:
                 return Container()
             except Exception:
@@ -259,6 +280,29 @@ def _score_signal_v2(feat: dict, cfg) -> tuple[float, Dict[str, float], str]:
     score = max(0.0, min(100.0, score))
     tag = f"{score:.4f}/100 | Bias: {side}"
     return score, factors, tag
+
+
+# ------------------------ Macro (opcional) ------------------------ #
+
+def _get_macro_risk(cfg) -> Optional[Tuple[float, Dict[str, Any]]]:
+    """
+    Intenta obtener un riesgo macro normalizado 0..1.
+    Debe existir utils.macro.macro_risk(cfg) → (risk_0_1, info_dict).
+    Si no existe o USE_VIX_DXY=False, devuelve None.
+    """
+    if not bool(getattr(cfg, "USE_VIX_DXY", False)):
+        return None
+    try:
+        from utils.macro import macro_risk  # type: ignore
+    except Exception:
+        return None
+    try:
+        risk, info = macro_risk(cfg)  # se espera 0..1
+        r = float(max(0.0, min(1.0, risk)))
+        return r, (info or {})
+    except Exception as e:
+        audit_logger.info(f"Macro guard omitido: {e}")
+        return None
 
 
 # ------------------------ analizador principal ------------------------ #
@@ -383,7 +427,7 @@ def analizar_simbolo(
     contradiction = False
     if use_global:
         contradiction = (
-            (bias == "LONG" and (not btc_alcista and not eth_alcista)) or
+            (bias == "LONG"  and (not btc_alcista and not eth_alcista)) or
             (bias == "SHORT" and (btc_alcista and eth_alcista))
         )
         if contradiction and bias_mode in ("strict", "strong", "hard"):
@@ -493,8 +537,36 @@ def analizar_simbolo(
     }
     score, factors, _tag = _score_signal_v2(features_v2, config)
 
+    # 8.1) Penalización macro opcional (VIX/DXY)
+    macro_note = ""
+    macro_applied = False
+    if bool(getattr(config, "USE_VIX_DXY", False)):
+        mr = _get_macro_risk(config)
+        if mr is not None:
+            risk, info = mr
+            cap = float(getattr(config, "MACRO_SCORE_CAP", 0.15) or 0.0)  # 0..1 fracción
+            penalty = 100.0 * max(0.0, min(1.0, risk)) * max(0.0, min(1.0, cap))
+            if penalty > 0:
+                score = max(0.0, min(100.0, score - penalty))
+                macro_applied = True
+                macro_note = f"\n[MACRO] riesgo={risk:.2f} penalización={penalty:.2f}"
+
+            # Opcional: si el módulo macro define flags de "hard stop", respétalos
+            hard_block = bool(info.get("hard_block")) if isinstance(info, dict) else False
+            if hard_block:
+                audit_logger.info(f"{symbol} bloqueado por guardia macro (hard).")
+                return None
+
+            # Guardar algunos campos macro en el contenedor
+            try:
+                tec.macro_risk = float(risk)
+                tec.macro_penalty = float(penalty)
+            except Exception:
+                pass
+
     # 9) Log de síntesis
     fix_notes = "; ".join(sorted(fix_info.keys())) if fix_info else ""
+    rr_show = rr if np.isfinite(rr) else float("nan")
     log_info = (
         f"Análisis {symbol}:"
         f"\n- Tendencia diaria: {tendencia_diaria}"
@@ -503,9 +575,10 @@ def analizar_simbolo(
         f"\n- Volumen 24h (USDT): {vol_usdt_est:,.0f}"
         f"\n- Volumen creciente 3d: {'Sí' if volumen_creciente else 'No'}"
         f"\n[SCORE] Total: {score:.4f}/100 | Bias: {bias}"
-        f"\nNiveles → Entry: {entry} | SL: {sl} | SP: {tp} (RR≈{rr if np.isfinite(rr) else '—'}R)"
+        f"\nNiveles → Entry: {entry} | SL: {sl} | SP: {tp} (RR≈{rr_show if np.isfinite(rr_show) else '—'}R)"
         f"\nATR%≈{(atr_pct if atr_pct is not None else float('nan')):.4f}"
         + (f"\n[LEVELS_FIX] {fix_notes}" if fix_notes else "")
+        + (macro_note if macro_applied else "")
     )
     logging.info(log_info)
 
@@ -520,30 +593,36 @@ def analizar_simbolo(
     except Exception:
         pass
 
-    # --- Aliases mínimos para el sender (sin cambiar el resto del pipeline) ---
+    # --- Aliases mínimos para el sender / ejecutor (compatibilidad fuerte) ---
     try:
-        # Lado en formato común
+        # Lado en formato de filtros (LONG/SHORT) + orden (BUY/SELL)
         side_from = getattr(tec, "bias", getattr(tec, "tipo", "LONG"))
-        tec.side = "BUY" if str(side_from).upper() == "LONG" else "SELL"
-        # Alias cortos
+        tec.side = str(side_from).upper()                     # LONG | SHORT
+        tec.order_side = "BUY" if tec.side == "LONG" else "SELL"
+
+        # Alias de niveles
         tec.tp = float(getattr(tec, "take_profit", getattr(tec, "stop_profit")))
         tec.sl = float(getattr(tec, "stop_loss"))
         tec.entry_price = float(getattr(tec, "entry", getattr(tec, "precio", 0.0)))
-        tec.score = float(getattr(tec, "score", 0.0))
-        # Paquete listo para enviar
+
+        # Payload dual (claves duplicadas para adaptarse a distintos consumidores)
         tec.alert_payload = {
             "symbol": getattr(tec, "symbol"),
-            "side": tec.side,
-            "entry": tec.entry_price,
-            "stop": tec.sl,
-            "target": tec.tp,
+            "side": tec.side,                 # LONG/SHORT (filtros)
+            "order_side": tec.order_side,     # BUY/SELL (exchange)
+            "entry": tec.entry_price,         # alias 1
+            "entry_price": tec.entry_price,   # alias 2
+            "sl": tec.sl,
+            "stop": tec.sl,                   # alias
+            "tp": tec.tp,
+            "target": tec.tp,                 # alias
             "score": float(getattr(tec, "score", 0.0)),
             "rr": float(getattr(tec, "rr", 0.0)),
             "adx": float(getattr(tec, "adx", 0.0)),
         }
     except Exception:
         pass
-    # --- fin aliases ---
+    # -------------------------------------------------------------------------
 
     # 10) Decisión por umbral
     min_score = float(getattr(config, "MIN_SCORE_ALERTA", 55))

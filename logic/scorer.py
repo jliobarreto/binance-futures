@@ -2,7 +2,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Tuple, Optional
-
 import math
 
 # Importa config si existe; usa defaults si no.
@@ -15,7 +14,7 @@ except Exception:
         RR_MIN = 1.8
         ATR_PCT_MIN = 0.005
         ATR_PCT_MAX = 0.30
-        BIAS_MODE = "relaxed"
+        BIAS_MODE = "relaxed"  # relaxed | strict | position
     config = _Cfg()  # type: ignore
 
 
@@ -48,7 +47,8 @@ def _score_band(x: Optional[float], lo: float, lo_ideal: float, hi_ideal: float,
 def inferir_bias(ctx: Dict) -> str:
     """
     Devuelve 'LONG' | 'SHORT' | 'NONE' a partir de EMAs diarias y semanales + RSI.
-    Espera claves: ema_fast_h1, ema_slow_h1, ema_fast_h4, ema_slow_h4, rsi14_h1, rsi14_h4, atr_pct (opcional)
+    Espera claves: ema_fast_h1, ema_slow_h1, ema_fast_h4, ema_slow_h4, rsi14_h1, rsi14_h4, atr_pct (opcional).
+    Modo 'position': requiere alineación SEMANAL clara y que el diario no contradiga.
     """
     e20d = ctx.get("ema_fast_h1")
     e50d = ctx.get("ema_slow_h1")
@@ -58,10 +58,12 @@ def inferir_bias(ctx: Dict) -> str:
     rsi_w = ctx.get("rsi14_h4")
     atrp  = ctx.get("atr_pct")
 
-    # ATR% kill opcional
+    mode = str(getattr(config, "BIAS_MODE", "relaxed")).lower()
+
+    # ATR% kill opcional (protege de activos hipervolátiles)
     atr_max = getattr(config, "ATR_PCT_MAX", None)
     if atr_max is not None and isinstance(atr_max, (int, float)) and atrp is not None:
-        if atrp > float(atr_max) * 1.05:  # un poco de tolerancia
+        if atrp > float(atr_max) * 1.05:  # tolerancia
             return "NONE"
 
     up_d   = (e20d is not None and e50d is not None and e20d > e50d)
@@ -69,15 +71,25 @@ def inferir_bias(ctx: Dict) -> str:
     down_d = (e20d is not None and e50d is not None and e20d < e50d)
     down_w = (e20w is not None and e50w is not None and e20w < e50w)
 
-    # Estricto: exige coherencia D+W
-    if str(getattr(config, "BIAS_MODE", "relaxed")).lower() == "strict":
+    # ── Modo posición (sesgo de meses): manda la SEMANAL ──
+    if mode in ("position", "weekly_strict"):
+        # LONG: semanal alcista y RSI_w >= 50; diario no debe contradecir (vale lateral o alcista).
+        if up_w and (rsi_w is None or rsi_w >= 50) and (not down_d) and (rsi_d is None or rsi_d >= 45):
+            return "LONG"
+        # SHORT: semanal bajista y RSI_w <= 50; diario no debe contradecir (vale lateral o bajista).
+        if down_w and (rsi_w is None or rsi_w <= 50) and (not up_d) and (rsi_d is None or rsi_d <= 55):
+            return "SHORT"
+        return "NONE"
+
+    # ── Modo estricto: exige coherencia D+W ──
+    if mode == "strict":
         if up_d and up_w and (rsi_d is None or rsi_d >= 45) and (rsi_w is None or rsi_w >= 45):
             return "LONG"
         if down_d and down_w and (rsi_d is None or rsi_d <= 55) and (rsi_w is None or rsi_w <= 55):
             return "SHORT"
         return "NONE"
 
-    # Relajado: permite que semanal no contradiga
+    # ── Modo relajado (por defecto): permite semanal neutral si el diario no contradice ──
     if up_d and not down_w:
         return "LONG"
     if down_d and not up_w:
@@ -113,7 +125,6 @@ def calcular_score(tec, bias: Optional[str] = None) -> Tuple[float, Dict[str, fl
       - Volume     10
       - R/R        25
     """
-    # Mapear entrada genérica a la vista mínima
     tv = _TecView(
         precio=float(getattr(tec, "precio", getattr(tec, "close", 0.0)) or 0.0),
         rsi_1d=_asfloat(getattr(tec, "rsi_1d", None)),
@@ -150,8 +161,6 @@ def calcular_score(tec, bias: Optional[str] = None) -> Tuple[float, Dict[str, fl
             trend_s = 0.3
 
     # 2) Momentum (RSI)
-    # LONG ideal: RSI_d 45–60, RSI_w 45–60.
-    # SHORT ideal: RSI_d 40–55 (más bajo), RSI_w 40–55.
     if tv.tipo == "LONG":
         mom_d = _score_band(tv.rsi_1d, 35, 45, 60, 75)
         mom_w = _score_band(tv.rsi_1w, 35, 45, 60, 75)
@@ -171,7 +180,6 @@ def calcular_score(tec, bias: Optional[str] = None) -> Tuple[float, Dict[str, fl
     if atr_pct is None:
         volat_s = 0.0
     else:
-        # ideal 0.8*mid .. 1.2*mid
         mid = 0.5 * (atr_min + atr_max)
         lo_i, hi_i = 0.8 * mid, 1.2 * mid
         volat_s = _score_band(atr_pct, atr_min, lo_i, hi_i, atr_max)
@@ -183,7 +191,6 @@ def calcular_score(tec, bias: Optional[str] = None) -> Tuple[float, Dict[str, fl
     if vitalidad is None:
         vol_s = 0.0
     else:
-        # 1x -> 0.7; 1.2x -> 1.0; 0.5x -> 0.0
         if vitalidad >= 1.2:
             vol_s = 1.0
         elif vitalidad >= 1.0:
@@ -210,7 +217,6 @@ def calcular_score(tec, bias: Optional[str] = None) -> Tuple[float, Dict[str, fl
     else:
         rr_s = 0.0
 
-    # Ponderación a 0..100
     factors = {
         "trend": round(W_TREND * trend_s, 4),
         "momentum": round(W_MOM * momentum_s, 4),
